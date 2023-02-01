@@ -452,6 +452,7 @@ class Sles(Distro):
             self.repoDir + "/sdk"
         if '15' in version:
             subversion = ''
+            python_str= ''
             if version[2:5]:
                 subversion = version[2:5].upper()+"-"
                 if 'SP' in subversion:
@@ -460,7 +461,11 @@ class Sles(Distro):
                 if 'SP1' in subversion:
                     urlstring = "http://"+vmParser.confparser(
                         'repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir+'/sdk'
-                value = ["SP4", "SP3"]
+                    python_str="<listentry>\n" \
+                                   "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
+                                   "<product>sle-module-python2</product>\n<product_dir>/Module-Python2</product_dir>\n" \
+                                   "</listentry>\n"
+                value = ["SP4", "SP3", "SP1", "SP5"]
                 if any(x in subversion for x in value):
                     python_str = ''
                 subversion = ''
@@ -480,7 +485,9 @@ class Sles(Distro):
                 "</listentry>\n<listentry>\n" \
                 "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
                 "<product>sle-module-basesystem</product>\n<product_dir>/"+subversion+"Module-Basesystem</product_dir>\n" \
-                "</listentry>\n</add_on_products>\n</add-on>\n"
+                "</listentry>\n"+python_str+ \
+                "</add_on_products>\n</add-on>\n"
+
             sles_package = "<package>sles-release</package><package>sle-module-server-applications-release</package>\n" \
                 "<package>sle-module-legacy-release</package>\n" \
                 "<package>sle-module-development-tools-release</package><package>sle-module-desktop-applications-release</package>\n" \
