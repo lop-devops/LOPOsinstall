@@ -321,14 +321,14 @@ class Rhel(Distro):
                 host_disk += '/dev/disk/by-id/' + disk+','
             vmParser.args.host_disk = host_disk.rstrip(',')
 
-        if '8' not in version:
-            lstr = "telnet\njava\n%end"
-            urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                self.repoDir
-        else:
+        if version.startswith('8') or  version.startswith('9'):
             lstr = "%end"
             urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
                 self.repoDir + "/BaseOS"
+        else:
+            lstr = "telnet\njava\n%end"
+            urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
+                self.repoDir 
 
         if vmParser.args.ksargs == '':
             addksstring = "autopart --type=lvm --fstype=ext4"
@@ -336,6 +336,9 @@ class Rhel(Distro):
             addksstring = vmParser.args.ksargs
 
         ksparm = sftp.open('/var/www/html'+self.ksinst, 'w')
+        sshd_file=""
+        if version.startswith('9'):
+            sshd_file="\n%post \nsed -i 's/#\?PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;service sshd restart\n%end"
 
         inst_param = "%pre\n%end\nurl "+urlstring, "\ntext\nkeyboard"\
                      " --vckeymap=us --xlayouts='us'\nlang en_US.UTF-8\n"\
@@ -348,7 +351,7 @@ class Rhel(Distro):
                      "\nignoredisk --only-use=" + vmParser.args.host_disk, \
                      "\n" + addksstring, \
                      "\nservices --enabled=NetworkManager,sshd" \
-                     "\nreboot\n%packages\n@core\nkexec-tools\n"+lstr
+                     "\nreboot\n%packages\n@core\nkexec-tools\n"+lstr+sshd_file
 
         ksparm.writelines(inst_param)
         ksparm.sftp.close()
