@@ -312,11 +312,8 @@ class Rhel(Distro):
         sftp = self.KsHost.open_sftp()
         self.ksinst = vmParser.confparser(
             'kshost', 'KsDir') + '/' + distro+'/'+distro+'-' + vmParser.args.host_mac + '.ks'
-        if vmParser.args.host_disk == '':
-            if vmParser.args.multipathsetup == '':
-                vmParser.args.host_disk = '/dev/sda'
-            else:
-                vmParser.args.host_disk = '/dev/disk/by-id/dm-name-mpatha'
+        if vmParser.args.host_disk == '' and vmParser.args.multipathsetup == '':
+            vmParser.args.host_disk = '/dev/sda'
         else:
             host_disk = ''
             disks = vmParser.args.host_disk.split(',')
@@ -434,19 +431,14 @@ class Sles(Distro):
             'kshost', 'KsDir') + '/' + distro+'/'+distro+'-' + vmParser.args.host_mac + '.ks'
 
         partition_string = ''
-        if vmParser.args.host_disk == '':
-            if vmParser.args.multipathsetup == '':
-                partition_string = ''
-            else:
-                vmParser.args.host_disk = '/dev/disk/by-id/dm-name-mpatha'
-                partition_string = "<device_map config:type=\"list\"><device_map_entry><firmware>hd0</firmware>\n" \
-                    "<linux>"+vmParser.args.host_disk + \
-                    "</linux>\n</device_map_entry></device_map><use>all</use>"
+        multipath_string = ''
+        if vmParser.args.host_disk != '':
+            if vmParser.args.multipathsetup != '':
+                vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
+                partition_string = "<device>"+vmParser.args.host_disk+"</device>\n<use>all</use>"
+                multipath_string = "<storage>\n<start_multipath config:type=\"boolean\">true</start_multipath>\n</storage>"
         else:
-            vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
-            partition_string = "<device_map config:type=\"list\"><device_map_entry><firmware>hd0</firmware>\n" \
-                "<linux>"+vmParser.args.host_disk + \
-                "</linux>\n</device_map_entry></device_map><use>all</use>"
+            partition_string = "<use>all</use>\n"
 
         host_name = ''
         if vmParser.args.host_name:
@@ -460,6 +452,7 @@ class Sles(Distro):
             self.repoDir + "/sdk"
         if '15' in version:
             subversion = ''
+            python_str= ''
             if version[2:5]:
                 subversion = version[2:5].upper()+"-"
                 if 'SP' in subversion:
@@ -468,7 +461,11 @@ class Sles(Distro):
                 if 'SP1' in subversion:
                     urlstring = "http://"+vmParser.confparser(
                         'repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir+'/sdk'
-                value = ["SP4", "SP3"]
+                    python_str="<listentry>\n" \
+                                   "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
+                                   "<product>sle-module-python2</product>\n<product_dir>/Module-Python2</product_dir>\n" \
+                                   "</listentry>\n"
+                value = ["SP4", "SP3", "SP1", "SP5"]
                 if any(x in subversion for x in value):
                     python_str = ''
                 subversion = ''
@@ -488,10 +485,9 @@ class Sles(Distro):
                 "</listentry>\n<listentry>\n" \
                 "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
                 "<product>sle-module-basesystem</product>\n<product_dir>/"+subversion+"Module-Basesystem</product_dir>\n" \
-                "</listentry>\n<listentry>\n" \
-                "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
-                "<product>sle-module-python2</product>\n<product_dir>/"+subversion+"Module-Python2</product_dir>\n" \
-                "</listentry>\n</add_on_products>\n</add-on>\n"
+                "</listentry>\n"+python_str+ \
+                "</add_on_products>\n</add-on>\n"
+
             sles_package = "<package>sles-release</package><package>sle-module-server-applications-release</package>\n" \
                 "<package>sle-module-legacy-release</package>\n" \
                 "<package>sle-module-development-tools-release</package><package>sle-module-desktop-applications-release</package>\n" \
@@ -510,26 +506,25 @@ class Sles(Distro):
         ksparm = sftp.open('/var/www/html'+self.ksinst, 'w')
         inst_param = "<?xml version=\"1.0\"?>\n<!DOCTYPE profile>\n" \
                      "<profile xmlns=\"http://www.suse.com/1.0/yast2ns\" xmlns:config=\"http://www.suse.com/1.0/configns\">\n"+sles15_url+""\
-                     "<general>\n<mode>\n<confirm config:type=\"boolean\">false</confirm>\n</mode>\n</general>\n" \
                      "<bootloader>\n<global>\n<append>mitigations=auto quiet crashkernel=1024M</append>\n" \
                      "<xen_kernel_append>crashkernel=1024M\&lt;4G</xen_kernel_append>\n</global>\n</bootloader>\n" \
                      "<kdump>\n<add_crash_kernel t=\"boolean\">true</add_crash_kernel>\n<crash_kernel>1024M</crash_kernel>\n" \
                      "<crash_xen_kernel>1024M\&lt;4G</crash_xen_kernel>\n</kdump> \n" \
                      "<users config:type=\"list\">\n<user>\n<encrypted config:type=\"boolean\">false</encrypted>\n" \
                      "<user_password>"+vmParser.args.host_password+"</user_password>\n<username>root</username>\n</user>\n</users>\n" \
+                     "<general>\n<mode>\n<confirm config:type=\"boolean\">false</confirm>\n</mode>\n"+multipath_string+"</general>\n" \
                      "<partitioning config:type=\"list\">\n<drive>\n"+partition_string+"</drive>\n</partitioning>\n" \
                      "<services-manager>\n<default_target>multi-user</default_target>\n<services>\n<disable config:type=\"list\">\n" \
                      "<service>sshd</service>\n</disable>\n</services>\n</services-manager>\n<firewall>\n" \
                      "<enable_firewall config:type=\"boolean\">false</enable_firewall>\n<start_firewall config:type=\"boolean\">false</start_firewall>\n" \
-                     "</firewall>\n<networking>\n<dns>\n<dhcp_hostname config:type=\"boolean\">true</dhcp_hostname>\n" \
-                     "<hostname>"+host_name+"</hostname>\n</dns>\n<managed config:type=\"boolean\">false</managed>\n<routing>\n" \
+                     "</firewall>\n<networking>\n<dns>\n<hostname>"+host_name+"</hostname>\n</dns>\n<managed config:type=\"boolean\">false</managed>\n<routing>\n" \
                      "<ip_forward config:type=\"boolean\">false</ip_forward>\n</routing>\n" \
                      "<keep_install_network config:type=\"boolean\">true</keep_install_network>\n</networking>\n<software>\n" \
-                     "<packages config:type=\"list\">\n<package>gcc</package>\n" \
+                     "<packages config:type=\"list\">\n<package>gcc</package>\n<package>kdump</package>\n" \
                      "<package>gcc-c++</package>\n"+sles_package+"</software>\n<scripts>\n<post-scripts config:type=\"list\">\n<script>\n" \
                      "<filename>setupssh.sh</filename>\n<interpreter>shell</interpreter>\n<debug config:type=\"boolean\">true</debug>\n" \
                      "<source><![CDATA[\nsystemctl enable sshd.service\nsystemctl start sshd.service\n]]></source>\n" \
-                     "</script>\n</post-scripts>\n</scripts>\n</profile>"
+                    "</script>\n</post-scripts>\n</scripts>\n</profile>\n"
         ksparm.writelines(inst_param)
         ksparm.sftp.close()
 
