@@ -336,10 +336,12 @@ class Rhel(Distro):
             addksstring = vmParser.args.ksargs
 
         ksparm = sftp.open('/var/www/html'+self.ksinst, 'w')
-        sshd_file=""
+        sshd_file = ''
+        mpath_file = ";multipath -t >/etc/multipath.conf;service multipathd start"
+        if vmParser.args.multipathsetup != '':
+            sshd_file="\n%post \n"+mpath_file+"\n%end"
         if version.startswith('9'):
-            sshd_file="\n%post \nsed -i 's/#\?PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;service sshd restart\n%end"
-
+            sshd_file="\n%post \nsed -i 's/#\?PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;service sshd restart"+mpath_file+"\n%end"
         inst_param = "%pre\n%end\nurl "+urlstring, "\ntext\nkeyboard"\
                      " --vckeymap=us --xlayouts='us'\nlang en_US.UTF-8\n"\
                      "rootpw --plaintext " + vmParser.args.host_password, \
@@ -351,7 +353,7 @@ class Rhel(Distro):
                      "\nignoredisk --only-use=" + vmParser.args.host_disk, \
                      "\n" + addksstring, \
                      "\nservices --enabled=NetworkManager,sshd" \
-                     "\nreboot\n%packages\n@core\nkexec-tools\n"+lstr+sshd_file
+                     "\nreboot\n%packages\n@core\nkexec-tools\ndevice-mapper-multipath\n"+lstr+sshd_file
 
         ksparm.writelines(inst_param)
         ksparm.sftp.close()
@@ -435,11 +437,11 @@ class Sles(Distro):
 
         partition_string = ''
         multipath_string = ''
+        if vmParser.args.multipathsetup != '':
+            multipath_string = "<storage>\n<start_multipath config:type=\"boolean\">true</start_multipath>\n</storage>"
         if vmParser.args.host_disk != '':
-            if vmParser.args.multipathsetup != '':
-                vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
-                partition_string = "<device>"+vmParser.args.host_disk+"</device>\n<use>all</use>"
-                multipath_string = "<storage>\n<start_multipath config:type=\"boolean\">true</start_multipath>\n</storage>"
+            vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
+            partition_string = "<device>"+vmParser.args.host_disk+"</device>\n<use>all</use>"
         else:
             partition_string = "<use>all</use>\n"
 
@@ -498,7 +500,7 @@ class Sles(Distro):
                 "<pattern>base</pattern>\n" \
                 "<pattern>basesystem</pattern><pattern>enhanced_base</pattern><pattern>fonts</pattern><pattern>gnome_basic</pattern>\n" \
                 "<pattern>gnome_basis</pattern><pattern>minimal_base</pattern><pattern>sw_management</pattern><pattern>x11</pattern>\n" \
-                "<pattern>x11_enhanced</pattern><pattern>x11_yast</pattern><pattern>yast2_basis</pattern></patterns>\n"
+                "<pattern>x11_enhanced</pattern><pattern>x11_yast</pattern><pattern>yast2_basis</pattern><pattern>multipath-tools</pattern></patterns>\n"
         else:
             sles15_url = "<add-on>\n<add_on_products config:type=\"list\">\n<listentry>\n" \
                 "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
