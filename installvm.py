@@ -337,6 +337,9 @@ class Rhel(Distro):
 
         ksparm = sftp.open('/var/www/html'+self.ksinst, 'w')
         sshd_file = ''
+        kernel_params = ''
+        if vmParser.args.kernel_params != '':
+            kernel_params = " --append="+'\"'+vmParser.args.kernel_params+'\"'
         mpath_file = ";multipath -t >/etc/multipath.conf;service multipathd start"
         if vmParser.args.multipathsetup != '':
             sshd_file="\n%post \n"+mpath_file+"\n%end"
@@ -349,7 +352,7 @@ class Rhel(Distro):
                      "\nzerombr" \
                      "\nclearpart --all --initlabel "\
                      "--drives=" + vmParser.args.host_disk, \
-                     "\nbootloader   --location=mbr  --boot-drive=" + vmParser.args.host_disk, \
+                     "\nbootloader   --location=mbr --boot-drive=" + vmParser.args.host_disk+kernel_params , \
                      "\nignoredisk --only-use=" + vmParser.args.host_disk, \
                      "\n" + addksstring, \
                      "\nservices --enabled=NetworkManager,sshd" \
@@ -437,6 +440,10 @@ class Sles(Distro):
 
         partition_string = ''
         multipath_string = ''
+        kernel_params = 'mitigations=auto quiet crashkernel=1024M '
+        if vmParser.args.kernel_params != '':
+            kernel_params = "%s %s" % (kernel_params, vmParser.args.kernel_params)
+
         if vmParser.args.multipathsetup != '':
             multipath_string = "<storage>\n<start_multipath config:type=\"boolean\">true</start_multipath>\n</storage>"
         if vmParser.args.host_disk != '':
@@ -511,7 +518,7 @@ class Sles(Distro):
         ksparm = sftp.open('/var/www/html'+self.ksinst, 'w')
         inst_param = "<?xml version=\"1.0\"?>\n<!DOCTYPE profile>\n" \
                      "<profile xmlns=\"http://www.suse.com/1.0/yast2ns\" xmlns:config=\"http://www.suse.com/1.0/configns\">\n"+sles15_url+""\
-                     "<bootloader>\n<global>\n<append>mitigations=auto quiet crashkernel=1024M</append>\n" \
+                     "<bootloader>\n<global>\n<append>"+kernel_params+"</append>\n" \
                      "<xen_kernel_append>crashkernel=1024M\&lt;4G</xen_kernel_append>\n</global>\n</bootloader>\n" \
                      "<kdump>\n<add_crash_kernel t=\"boolean\">true</add_crash_kernel>\n<crash_kernel>1024M</crash_kernel>\n" \
                      "<crash_xen_kernel>1024M\&lt;4G</crash_xen_kernel>\n</kdump> \n" \
