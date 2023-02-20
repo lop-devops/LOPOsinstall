@@ -52,6 +52,8 @@ class CmdLineArgParser():
         hostGroup.add_argument(
             '--multipathsetup', help='Host disk having multipath setup', default='')
         hostGroup.add_argument(
+            '--kernel-params', help='append addon kernel parameters', default='')
+        hostGroup.add_argument(
             '--host-password', help='system password', default='passw0rd')
         lparDetails = parser.add_argument_group('Managed System Details', '')
         lparDetails.add_argument(
