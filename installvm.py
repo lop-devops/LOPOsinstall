@@ -507,7 +507,7 @@ class Sles(Distro):
                 "<pattern>base</pattern>\n" \
                 "<pattern>basesystem</pattern><pattern>enhanced_base</pattern><pattern>fonts</pattern><pattern>gnome_basic</pattern>\n" \
                 "<pattern>gnome_basis</pattern><pattern>minimal_base</pattern><pattern>sw_management</pattern><pattern>x11</pattern>\n" \
-                "<pattern>x11_enhanced</pattern><pattern>x11_yast</pattern><pattern>yast2_basis</pattern><pattern>multipath-tools</pattern></patterns>\n"
+                "<pattern>x11_enhanced</pattern><pattern>x11_yast</pattern><pattern>yast2_basis</pattern></patterns>\n"
         else:
             sles15_url = "<add-on>\n<add_on_products config:type=\"list\">\n<listentry>\n" \
                 "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
@@ -532,7 +532,7 @@ class Sles(Distro):
                      "</firewall>\n<networking>\n<dns>\n<hostname>"+host_name+"</hostname>\n</dns>\n<managed config:type=\"boolean\">false</managed>\n<routing>\n" \
                      "<ip_forward config:type=\"boolean\">false</ip_forward>\n</routing>\n" \
                      "<keep_install_network config:type=\"boolean\">true</keep_install_network>\n</networking>\n<software>\n" \
-                     "<packages config:type=\"list\">\n<package>gcc</package>\n<package>kdump</package>\n" \
+                     "<packages config:type=\"list\">\n<package>gcc</package>\n<package>multipath-tools</package>\n<package>kdump</package>\n" \
                      "<package>gcc-c++</package>\n"+sles_package+"</software>\n<scripts>\n<post-scripts config:type=\"list\">\n<script>\n" \
                      "<filename>setupssh.sh</filename>\n<interpreter>shell</interpreter>\n<debug config:type=\"boolean\">true</debug>\n" \
                      "<source><![CDATA[\nsystemctl enable sshd.service\nsystemctl start sshd.service\n]]></source>\n" \
