@@ -338,7 +338,7 @@ class Rhel(Distro):
         ksparm = sftp.open('/var/www/html'+self.ksinst, 'w')
         sshd_file = ''
         kernel_params = ''
-        if vmParser.args.kernel_params != '':
+        if not vmParser.args.kernel_params:
             kernel_params = " --append="+'\"'+vmParser.args.kernel_params+'\"'
         mpath_file = ";multipath -t >/etc/multipath.conf;service multipathd start"
         if vmParser.args.multipathsetup != '':
@@ -441,7 +441,7 @@ class Sles(Distro):
         partition_string = ''
         multipath_string = ''
         kernel_params = 'mitigations=auto quiet crashkernel=1024M '
-        if vmParser.args.kernel_params != '':
+        if not vmParser.args.kernel_params:
             kernel_params = "%s %s" % (kernel_params, vmParser.args.kernel_params)
 
         if vmParser.args.multipathsetup != '':
