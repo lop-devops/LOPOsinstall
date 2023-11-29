@@ -13,7 +13,7 @@ usage: installvm.py [-h] --host-ip HOST_IP --host-name HOST_NAME --host-gw
                     [--hmc-userid HMC_USERID] [--hmc-password HMC_PASSWORD]
                     [--hmc-profile HMC_PROFILE] [--ksargs KSARGS]
                     [--showcleanup SHOWCLEANUP] --distro DISTRO
-                    [--set-boot-order SET_BOOT_ORDER]
+                    [--set-boot-order SET_BOOT_ORDER] --ssl-server SSL_SERVER
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -21,6 +21,7 @@ optional arguments:
                         sles_11sp3_beta
   --set-boot-order SET_BOOT_ORDER
                         yes/True to set the boot disk order
+  --ssl-server SSL_SERVER  SSL certificate for the server domain to be created in LPAR
 
 Host Specific Information for Installation:
 

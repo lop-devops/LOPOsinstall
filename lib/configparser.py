@@ -75,6 +75,8 @@ class CmdLineArgParser():
             '--distro', help='distro to be installed ex: rhel_7.4le_alpa, sles_11sp3_beta', required=True)
         parser.add_argument(
             '--set-boot-order', help='yes/True to set the boot disk order', required=False)
+        parser.add_argument(
+            '--ssl-server', help='SSL certificate for the server domain to be created in LPAR', required=False)
 
         self.args = parser.parse_args()
         self.domain = (self.args.host_name).split('.', 1)[1]
