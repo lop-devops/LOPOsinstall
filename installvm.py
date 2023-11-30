@@ -275,6 +275,16 @@ class Distro():
         cmd = 'touch /etc/%s' % vmParser.args.distro
         self.runCommandcleanup(self.system, cmd)
 
+    def cacert_addinsystem(self):
+        self.system = paramiko.SSHClient()
+        self.system.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.system.connect(vmParser.args.host_ip, username='root',
+                            password=vmParser.args.host_password)
+        cmd = 'openssl s_client -showcerts -servername %s -connect %s:443 > /etc/pki/trust/anchors/cacert.pem' % (vmParser.args.ssl_server, vmParser.args.ssl_server)
+        self.runCommand(self.system, cmd)
+        cmd = 'update-ca-certificates'
+        self.runCommand(self.system, cmd)
+
 
 class Rhel(Distro):
 
@@ -659,4 +669,6 @@ if __name__ == "__main__":
     vmInst.monitorInstallation()
     vmInst.cleanup()
     vmInst.file_addinsystem()
+    if vmParser.args.ssl_server and distro.upper() == 'SLES':
+        vmInst.cacert_addinsystem()
     copylog()
