@@ -328,17 +328,35 @@ class Rhel(Distro):
             host_disk = ''
             disks = vmParser.args.host_disk.split(',')
             for disk in disks:
-                host_disk += '/dev/disk/by-id/' + disk+','
+                diskT = re.match(r'nvme\d+',disk)
+                if diskT:
+                    host_disk += '/dev/'+ disk+','
+                else:
+                    host_disk += '/dev/disk/by-id/' + disk+','
             vmParser.args.host_disk = host_disk.rstrip(',')
-
-        if version.startswith('8') or  version.startswith('9'):
-            lstr = "%end"
-            urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                self.repoDir + "/BaseOS"
-        else:
-            lstr = "telnet\njava\n%end"
-            urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                self.repoDir 
+     
+        if vmParser.args.install_protocol == 'http':
+            if version.startswith('8') or  version.startswith('9'):
+                lstr = "%end"
+                urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + self.repoDir + "/BaseOS"
+            else:
+                lstr = "telnet\njava\n%end"
+                urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + self.repoDir 
+     
+        if vmParser.args.install_protocol == 'ftp':
+            if version.startswith('8') or  version.startswith('9'):
+                lstr = "%end"
+                urlstring = "--url=ftp://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + self.repoDir + "/BaseOS"
+            else:
+                lstr = "telnet\njava\n%end"
+                urlstring = "--url=ftp://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + self.repoDir
+        if vmParser.args.install_protocol == 'nfs':
+            if version.startswith('8') or  version.startswith('9'):
+                lstr = "%end"
+                urlstring = "--url=nfs://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + self.repoDir + "/BaseOS"
+            else:
+                lstr = "telnet\njava\n%end"
+                urlstring = "--url=nfs://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + self.repoDir
 
         if vmParser.args.ksargs == '':
             addksstring = "autopart --type=lvm --fstype=ext4"
