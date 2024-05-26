@@ -72,6 +72,8 @@ class CmdLineArgParser():
             '--ksargs', help='Additional Kick Start option', default='')
         lparDetails.add_argument('--showcleanup', default=1)
         parser.add_argument(
+            '--install-protocol', help='mode of install.. ex: http,ftp,nfs',default='http')
+        parser.add_argument(
             '--distro', help='distro to be installed ex: rhel_7.4le_alpa, sles_11sp3_beta', required=True)
         parser.add_argument(
             '--set-boot-order', help='yes/True to set the boot disk order', required=False)
