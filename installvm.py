@@ -328,11 +328,7 @@ class Rhel(Distro):
             host_disk = ''
             disks = vmParser.args.host_disk.split(',')
             for disk in disks:
-                diskT = re.match(r'nvme\d+',disk)
-                if diskT:
-                    host_disk += '/dev/'+ disk+','
-                else:
-                    host_disk += '/dev/disk/by-id/' + disk+','
+                host_disk += '/dev/disk/by-id/' + disk+','
             vmParser.args.host_disk = host_disk.rstrip(',')
      
         if vmParser.args.install_protocol == 'http':
