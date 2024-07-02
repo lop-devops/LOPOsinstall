@@ -330,15 +330,22 @@ class Rhel(Distro):
             for disk in disks:
                 host_disk += '/dev/disk/by-id/' + disk+','
             vmParser.args.host_disk = host_disk.rstrip(',')
-
-        if version.startswith('8') or  version.startswith('9'):
-            lstr = "%end"
-            urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                self.repoDir + "/BaseOS"
-        else:
-            lstr = "telnet\njava\n%end"
-            urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                self.repoDir 
+     
+        if vmParser.args.install_protocol == 'http':
+            if version.startswith('8') or  version.startswith('9'):
+                lstr = "%end"
+                urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + self.repoDir + "/BaseOS"
+            else:
+                lstr = "telnet\njava\n%end"
+                urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + self.repoDir 
+     
+        if vmParser.args.install_protocol == 'nfs':
+            if version.startswith('8') or  version.startswith('9'):
+                lstr = "%end"
+                urlstring = "--url=nfs://"+vmParser.confparser('nfsRepo', 'RepoIP') + ':' + vmParser.confparser('nfsRepo', 'NfsRepoDir') + "/BaseOS"
+            else:
+                lstr = "telnet\njava\n%end"
+                urlstring = "--url=nfs://"+vmParser.confparser('repo', 'RepoIP') + ':' +  vmParser.confparser('nfsRepo', 'NfsRepoDir') 
 
         if vmParser.args.ksargs == '':
             addksstring = "autopart --type=lvm --fstype=ext4"
@@ -358,7 +365,7 @@ class Rhel(Distro):
         inst_param = "%pre\n%end\nurl "+urlstring, "\ntext\nkeyboard"\
                      " --vckeymap=us --xlayouts='us'\nlang en_US.UTF-8\n"\
                      "rootpw --plaintext " + vmParser.args.host_password, \
-                     "\nskipx\ntimezone Asia/Kolkata --isUtc" \
+                     "\nskipx\ntimezone Asia/Kolkata --utc" \
                      "\nzerombr" \
                      "\nclearpart --all --initlabel "\
                      "--drives=" + vmParser.args.host_disk, \
@@ -387,12 +394,19 @@ class Rhel(Distro):
             vmParser.args.host_gw + ':' + vmParser.args.host_netmask + ':' + \
             vmParser.args.host_name + ':' + 'net0:none' + ' nameserver=' + \
             vmParser.confparser(vmParser.domain, 'DNS')
-        strLnx = '    linux ' + vmParser.netDir + '/ppc/ppc64/vmlinuz ' + cli_nw + \
-            ' inst.repo=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
+        if vmParser.args.install_protocol == 'http':
+            strLnx = '    linux ' + vmParser.netDir + '/ppc/ppc64/vmlinuz ' + cli_nw + \
+                ' inst.repo=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
             self.repoDir + \
             ' inst.ks=http://' + \
             vmParser.confparser('kshost', 'Host') + self.ksinst + '\n'
-        gfd.write(strLnx)
+            gfd.write(strLnx)
+        if vmParser.args.install_protocol == 'nfs':
+            strLnx = '    linux ' + vmParser.netDir + '/ppc/ppc64/vmlinuz ' + cli_nw + \
+ ' inst.repo=nfs://' + vmParser.confparser('nfsRepo', 'RepoIP') \
++  vmParser.confparser('nfsRepo', 'NfsRepoDir')+ \
+' inst.ks=http://' +  vmParser.confparser('kshost', 'Host') + self.ksinst + '\n'
+            gfd.write(strLnx)
         strInit = '    initrd ' + vmParser.netDir + '/ppc/ppc64/initrd.img\n'
         gfd.write(strInit)
         gfd.write('}\n')
@@ -457,7 +471,14 @@ class Sles(Distro):
         if vmParser.args.multipathsetup != '':
             multipath_string = "<storage>\n<start_multipath config:type=\"boolean\">true</start_multipath>\n</storage>"
         if vmParser.args.host_disk != '':
-            vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
+            disks = vmParser.args.host_disk.split(',')
+            for disk in disks:
+                diskT = re.match(r'nvme\d+',disk)
+                if diskT:
+                    vmParser.args.host_disk = '/dev/' + vmParser.args.host_disk
+                else:
+                    vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
+            #vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
             partition_string = "<device>"+vmParser.args.host_disk+"</device>\n<use>all</use>"
         else:
             partition_string = "<use>all</use>\n"
@@ -472,25 +493,61 @@ class Sles(Distro):
         sles_package = ''
         urlstring = "http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
             self.repoDir + "/sdk"
-        if '15' in version:
-            subversion = ''
-            python_str= ''
-            if version[2:5]:
-                subversion = version[2:5].upper()+"-"
-                if 'SP' in subversion:
-                    urlstring = "http://"+vmParser.confparser(
-                        'repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir
-                if 'SP1' in subversion:
-                    urlstring = "http://"+vmParser.confparser(
+        if vmParser.args.install_protocol == 'http':
+            if '15' in version:
+                subversion = ''
+                python_str= ''
+                if version[2:5]:
+                    subversion = version[2:5].upper()+"-"
+                    if 'SP' in subversion:
+                        urlstring = "http://"+vmParser.confparser(
+                            'repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir
+                    if 'SP1' in subversion:
+                        urlstring = "http://"+vmParser.confparser(
                         'repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir+'/sdk'
-                    python_str="<listentry>\n" \
+                        python_str="<listentry>\n" \
                                    "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
                                    "<product>sle-module-python2</product>\n<product_dir>/Module-Python2</product_dir>\n" \
                                    "</listentry>\n"
-                value = ["SP4", "SP3", "SP1", "SP5"]
-                if any(x in subversion for x in value):
-                    python_str = ''
+                    value = ["SP4", "SP3", "SP1", "SP5"]
+                    if any(x in subversion for x in value):
+                        python_str = ''
+                    subversion = ''
+        if vmParser.args.install_protocol == 'nfs':
+            if '15' in version:
                 subversion = ''
+                python_str= ''
+                if version[2:5]:
+                    subversion = version[2:5].upper()+"-"
+                    if 'SP' in subversion:
+                        urlstring = "nfs://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir
+                    if 'SP1' in subversion:
+                        urlstring = "nfs://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir+'/sdk'
+                        python_str="<listentry>\n" \
+                                   "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
+                                   "<product>sle-module-python2</product>\n<product_dir>/Module-Python2</product_dir>\n" "</listentry>\n"
+                    value = ["SP4", "SP3", "SP1", "SP5"]
+                    if any(x in subversion for x in value):
+                        python_str = ''
+                    subversion = ''
+        if vmParser.args.install_protocol == 'ftp':
+            if '15' in version:
+                subversion = ''
+                python_str= ''
+                if version[2:5]:
+                    subversion = version[2:5].upper()+"-"
+                    if 'SP' in subversion:
+                        urlstring = "ftp://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir
+                    if 'SP1' in subversion:
+                        urlstring = "ftp://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir+'/sdk'
+                        python_str="<listentry>\n" \
+                                   "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
+                                   "<product>sle-module-python2</product>\n<product_dir>/Module-Python2</product_dir>\n" "</listentry>\n"
+                    value = ["SP4", "SP3", "SP1", "SP5"]
+                    if any(x in subversion for x in value):
+                        python_str = ''
+                    subversion = ''
+                    
 
             sles15_url = "<add-on>\n<add_on_products config:type=\"list\">\n<listentry>\n" \
                 "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
