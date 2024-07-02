@@ -107,5 +107,5 @@ class CmdLineArgParser():
         self.checkSys(self.confparser(self.domain, 'NextServer'), 'NextServer')
         self.checkSys(self.confparser('dhcp', 'DHCPServer'), 'DHCPServer')
         self.checkSys(self.confparser('repo', 'RepoIP'), 'RepoServer')
-        self.checkSys(self.confparser('nfs_repo', 'RepoIP'), 'NfsRepoDir')
-        self.checkSys(self.confparser('ftp_repo', 'RepoIP'), 'RepoServer')
+        self.checkSys(self.confparser('nfsRepo', 'RepoIP'), 'NfsRepoDir')
+        self.checkSys(self.confparser('ftpRepo', 'RepoIP'), 'RepoServer')
