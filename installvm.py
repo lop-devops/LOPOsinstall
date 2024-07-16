@@ -308,6 +308,11 @@ class Rhel(Distro):
         cmd = 'grub2-mknetdir --net-directory=' + self.baseURL + \
             ' --subdir=' + vmParser.netDir + '/boot/grub/'
         self.runCommand(self.nxtSrvCon, cmd)
+        cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
+            + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
+            + vmParser.confparser('repo', 'RepoPort') \
+            + self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf ' +  self.destDir+"/grub/powerpc-ieee1275/core.elf"
+        self.runCommand(self.nxtSrvCon, cmd)
         self.filename = vmParser.netDir + '/boot/grub/powerpc-ieee1275/core.elf'
 
     def createKickstart(self):
@@ -421,7 +426,12 @@ class Sles(Distro):
             cmd = 'grub2-mknetdir --net-directory=' + self.baseURL + \
                 ' --subdir=' + vmParser.netDir + '/boot/ppc64le/grub2-ieee1275/'
             self.runCommand(self.nxtSrvCon, cmd)
-            self.runCommand(self.nxtSrvCon, 'chmod 777 -R ' + self.destDir)
+            cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
+            	+ ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
+            	+ vmParser.confparser('repo', 'RepoPort') \
+            	+ self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf ' +  self.destDir+"/grub/powerpc-ieee1275/core.elf"
+            self.runCommand(self.nxtSrvCon, cmd)
+	    self.runCommand(self.nxtSrvCon, 'chmod 777 -R ' + self.destDir)
             self.filename = vmParser.netDir + \
                 '/boot/ppc64le/grub2-ieee1275/powerpc-ieee1275/core.elf'
         else:
