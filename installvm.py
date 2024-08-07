@@ -331,7 +331,7 @@ class Rhel(Distro):
                 host_disk += '/dev/disk/by-id/' + disk+','
             vmParser.args.host_disk = host_disk.rstrip(',')
 
-        if version.startswith('8') or  version.startswith('9'):
+        if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
             lstr = "%end"
             urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
                 self.repoDir + "/BaseOS"
