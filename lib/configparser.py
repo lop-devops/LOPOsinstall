@@ -74,6 +74,8 @@ class CmdLineArgParser():
         parser.add_argument(
             '--distro', help='distro to be installed ex: rhel_7.4le_alpa, sles_11sp3_beta', required=True)
         parser.add_argument(
+            '--install-protocol' , help='Mode of Install Protocol ex: http, ftp, nfs',required=True)
+        parser.add_argument(
             '--set-boot-order', help='yes/True to set the boot disk order', required=False)
         parser.add_argument(
             '--ssl-server', help='SSL certificate for the server domain to be created in LPAR', required=False)
@@ -105,3 +107,5 @@ class CmdLineArgParser():
         self.checkSys(self.confparser(self.domain, 'NextServer'), 'NextServer')
         self.checkSys(self.confparser('dhcp', 'DHCPServer'), 'DHCPServer')
         self.checkSys(self.confparser('repo', 'RepoIP'), 'RepoServer')
+        self.checkSys(self.confparser('nfsRepo', 'RepoIP'), 'NfsRepoDir')
+        self.checkSys(self.confparser('ftpRepo', 'ftpRepoIP'), 'FtpRepoServer')
