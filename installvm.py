@@ -330,15 +330,21 @@ class Rhel(Distro):
             for disk in disks:
                 host_disk += '/dev/disk/by-id/' + disk+','
             vmParser.args.host_disk = host_disk.rstrip(',')
-
-        if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
-            lstr = "%end"
-            urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                self.repoDir + "/BaseOS"
-        else:
-            lstr = "telnet\njava\n%end"
-            urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                self.repoDir 
+     
+        if vmParser.args.install_protocol == 'http':
+            if version.startswith('8') or  version.startswith('9'):
+                lstr = "%end"
+                urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + self.repoDir + "/BaseOS"
+            else:
+                lstr = "telnet\njava\n%end"
+                urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + self.repoDir 
+        if vmParser.args.install_protocol == 'nfs':
+            if version.startswith('8') or  version.startswith('9'):
+                lstr = "%end"
+                urlstring = "--url=nfs://"+vmParser.confparser('nfsRepo', 'RepoIP') + ':' + vmParser.confparser('nfsRepo', 'NfsRepoDir') + "/BaseOS"
+            else:
+                lstr = "telnet\njava\n%end"
+                urlstring = "--url=nfs://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('nfsRepo', 'NfsRepoDir')
 
         if vmParser.args.ksargs == '':
             addksstring = "autopart --type=lvm --fstype=ext4"
@@ -353,17 +359,12 @@ class Rhel(Distro):
         mpath_file = ";multipath -t >/etc/multipath.conf;service multipathd start"
         if vmParser.args.multipathsetup != '':
             sshd_file="\n%post \n"+mpath_file+"\n%end"
-        if version.startswith('9') or version.startswith('10'):
+        if version.startswith('9'):
             sshd_file="\n%post \nsed -i 's/#\?PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;service sshd restart"+mpath_file+"\n%end"
-        if version.startswith('10'):
-            timezone=""
-        else:
-            timezone="--isUtc"
-
         inst_param = "%pre\n%end\nurl "+urlstring, "\ntext\nkeyboard"\
                      " --vckeymap=us --xlayouts='us'\nlang en_US.UTF-8\n"\
                      "rootpw --plaintext " + vmParser.args.host_password, \
-                     "\nskipx\ntimezone Asia/Kolkata " +timezone, \
+                     "\nskipx\ntimezone Asia/Kolkata --isUtc" \
                      "\nzerombr" \
                      "\nclearpart --all --initlabel "\
                      "--drives=" + vmParser.args.host_disk, \
@@ -462,7 +463,10 @@ class Sles(Distro):
         if vmParser.args.multipathsetup != '':
             multipath_string = "<storage>\n<start_multipath config:type=\"boolean\">true</start_multipath>\n</storage>"
         if vmParser.args.host_disk != '':
-            vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
+            disks = vmParser.args.host_disk.split(',')
+            for disk in disks:
+                vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
+            #vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
             partition_string = "<device>"+vmParser.args.host_disk+"</device>\n<use>all</use>"
         else:
             partition_string = "<use>all</use>\n"
@@ -477,25 +481,26 @@ class Sles(Distro):
         sles_package = ''
         urlstring = "http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
             self.repoDir + "/sdk"
-        if '15' in version:
-            subversion = ''
-            python_str= ''
-            if version[2:5]:
-                subversion = version[2:5].upper()+"-"
-                if 'SP' in subversion:
-                    urlstring = "http://"+vmParser.confparser(
-                        'repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir
-                if 'SP1' in subversion:
-                    urlstring = "http://"+vmParser.confparser(
+        if vmParser.args.install_protocol == 'http':
+            if '15' in version:
+                subversion = ''
+                python_str= ''
+                if version[2:5]:
+                    subversion = version[2:5].upper()+"-"
+                    if 'SP' in subversion:
+                        urlstring = "http://"+vmParser.confparser(
+                            'repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir
+                    if 'SP1' in subversion:
+                        urlstring = "http://"+vmParser.confparser(
                         'repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir+'/sdk'
-                    python_str="<listentry>\n" \
+                        python_str="<listentry>\n" \
                                    "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
                                    "<product>sle-module-python2</product>\n<product_dir>/Module-Python2</product_dir>\n" \
                                    "</listentry>\n"
-                value = ["SP4", "SP3", "SP1", "SP5"]
-                if any(x in subversion for x in value):
-                    python_str = ''
-                subversion = ''
+                    value = ["SP4", "SP3", "SP1", "SP5"]
+                    if any(x in subversion for x in value):
+                        python_str = ''
+                    subversion = ''
 
             sles15_url = "<add-on>\n<add_on_products config:type=\"list\">\n<listentry>\n" \
                 "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
