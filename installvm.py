@@ -348,10 +348,12 @@ class Rhel(Distro):
                 lstr = "telnet\njava\n%end"
                 urlstring = "--url=nfs://"+vmParser.confparser('repo', 'RepoIP') + ':/var/www/html' + self.repoDir  
 
-        if vmParser.args.ksargs == '':
+        if vmParser.args.fs_type == 'xfs':
+            addksstring = "autopart --type=lvm --fstype=xfs"
+        if vmParser.args.fs_type == 'ext4':
             addksstring = "autopart --type=lvm --fstype=ext4"
-        else:
-            addksstring = vmParser.args.ksargs
+        if vmParser.args.fs_type == 'btrfs':
+            addksstring = "autopart --type=lvm --fstype=btrfs"
 
         ksparm = sftp.open('/var/www/html'+self.ksinst, 'w')
         sshd_file = ''
@@ -678,8 +680,8 @@ if __name__ == "__main__":
     vmInst.copyNetbootImage()
     vmInst.configGrub()
     vmInst.configDHCP()
-    vmInst.startInstallation()
-    vmInst.monitorInstallation()
+    #vmInst.startInstallation()
+    #vmInst.monitorInstallation()
     vmInst.cleanup()
     vmInst.file_addinsystem()
     if vmParser.args.ssl_server and distro.upper() == 'SLES':

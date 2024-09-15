@@ -75,7 +75,7 @@ class CmdLineArgParser():
             '--distro', help='distro to be installed ex: rhel_7.4le_alpa, sles_11sp3_beta', required=True)
         parser.add_argument(
             '--install-protocol' , help='Mode of Install Protocol ex: http, ftp, nfs',required=True)
-        parser.add_argument('--fs-type' ,help='RootFS type ex: xfs, ext4, btrfs', default='xfs')
+        parser.add_argument('--fs-type' ,help='RootFS type ex: xfs, ext4, btrfs',required=True)
         parser.add_argument(
             '--set-boot-order', help='yes/True to set the boot disk order', required=False)
         parser.add_argument(
