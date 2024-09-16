@@ -330,6 +330,7 @@ class Rhel(Distro):
             for disk in disks:
                 host_disk += '/dev/disk/by-id/' + disk+','
             vmParser.args.host_disk = host_disk.rstrip(',')
+        urlstring = ''
         if vmParser.args.install_protocol == 'http':
             if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
                 lstr = "%end"
@@ -339,7 +340,6 @@ class Rhel(Distro):
                 lstr = "telnet\njava\n%end"
                 urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
                     self.repoDir 
-
         if vmParser.args.install_protocol == 'nfs':
             if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
                 lstr = "%end"
