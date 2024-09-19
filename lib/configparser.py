@@ -76,6 +76,7 @@ class CmdLineArgParser():
         parser.add_argument(
             '--install-protocol' , help='Mode of Install Protocol ex: http, ftp, nfs',default='http')
         parser.add_argument('--fs-type' ,help='RootFS type ex: xfs, ext4, btrfs',default='xfs')
+        parser.add_argument('--partition-type' ,help='Boot disk partition type with or without lvm ex: plain or lvm',default='lvm')
         parser.add_argument(
             '--set-boot-order', help='yes/True to set the boot disk order', required=False)
         parser.add_argument(
