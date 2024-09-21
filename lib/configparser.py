@@ -105,6 +105,7 @@ class CmdLineArgParser():
         if rc:
             logging.info("%s not reachable : %s" % (name, addr))
             logging.info("Aborting Installation : Check log for errors")
+            exit (1)
         logging.info("%s is reachable : OK" % name)
 
     def validate(self):
