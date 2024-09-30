@@ -76,6 +76,7 @@ class CmdLineArgParser():
         parser.add_argument(
             '--install-protocol' , help='Mode of Install Protocol ex: http, ftp, nfs',default='http')
         parser.add_argument('--fs-type' ,help='RootFS type ex: xfs, ext4, btrfs',default='xfs')
+        parser.add_argument('--partition-type' ,help='Boot disk partition type with or without lvm ex: plain or lvm',default='lvm')
         parser.add_argument(
             '--set-boot-order', help='yes/True to set the boot disk order', required=False)
         parser.add_argument(
@@ -96,16 +97,11 @@ class CmdLineArgParser():
 
     def checkSys(self, addr, name):
         '''Check for server availability'''
-        rc = os.system("ping -c 8 %s > /dev/null" % addr)
-        for x in range(6):
-            if rc:
-                rc = os.system("ping -c 1 %s > /dev/null" % addr)
-            else:
-                break
+        rc = os.system("ping -c 1 %s > /dev/null" % addr)
         if rc:
             logging.info("%s not reachable : %s" % (name, addr))
             logging.info("Aborting Installation : Check log for errors")
-            exit (1)
+            exit(1)
         logging.info("%s is reachable : OK" % name)
 
     def validate(self):
