@@ -348,12 +348,20 @@ class Rhel(Distro):
                 lstr = "telnet\njava\n%end"
                 urlstring = "--url=nfs://"+vmParser.confparser('repo', 'RepoIP') + ':/var/www/html' + self.repoDir  
 
-        if vmParser.args.fs_type == 'btrfs':
-            addksstring = "autopart --type=lvm --fstype=btrfs"
-        elif vmParser.args.fs_type == 'ext4':
-            addksstring = "autopart --type=lvm --fstype=ext4"
-        else:
-            addksstring = "autopart --type=lvm --fstype=xfs"
+        exit_nosupport=0
+        if vmParser.args.partition_type not in ['lvm', 'plain']:
+            logging.info("Aborting Installation : as partition type %s is not supported or not valid" % vmParser.args.partition_type)
+            exit_nosupport=1
+
+        if vmParser.args.fs_type not in ['xfs','ext4', 'btrfs']:
+            logging.info("Aborting Installation : as filesystem type %s is not supported or not valid" % vmParser.args.fs_type)
+            exit_nosupport=1
+
+        if exit_nosupport:
+            exit(1)
+
+        addksstring = "autopart --type=%s --fstype=%s" % (vmParser.args.partition_type,vmParser.args.fs_type)
+
 
         ksparm = sftp.open('/var/www/html'+self.ksinst, 'w')
         sshd_file = ''
