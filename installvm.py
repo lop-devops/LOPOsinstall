@@ -330,6 +330,7 @@ class Rhel(Distro):
             for disk in disks:
                 host_disk += '/dev/disk/by-id/' + disk+','
             vmParser.args.host_disk = host_disk.rstrip(',')
+
         if vmParser.args.install_protocol == 'http':
             if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
                 lstr = "%end"
@@ -339,6 +340,15 @@ class Rhel(Distro):
                 lstr = "telnet\njava\n%end"
                 urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
                     self.repoDir 
+
+        if vmParser.args.install_protocol == 'ftp':
+            #username:password@server/
+            if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
+                lstr = "%end"
+                urlstring = "--url=ftp://"+vmParser.confparser('repo', 'RepoIP') + ':' + self.repoDir + "/BaseOS"
+            else:
+                lstr = "telnet\njava\n%end"
+                urlstring = "--url=ftp://"+vmParser.confparser('repo', 'RepoIP') + ':' + self.repoDir 
 
         if vmParser.args.install_protocol == 'nfs':
             if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
@@ -355,6 +365,10 @@ class Rhel(Distro):
 
         if vmParser.args.fs_type not in ['xfs','ext4', 'btrfs']:
             logging.info("Aborting Installation : as filesystem type %s is not supported or not valid" % vmParser.args.fs_type)
+            exit_nosupport=1
+
+        if vmParser.args.install_protocol not in ['http','nfs','ftp']:
+            logging.info("Aborting Installation : as install protocol type %s is not supported or not valid" % vmParser.args.install_protocol)
             exit_nosupport=1
 
         if exit_nosupport:
