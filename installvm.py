@@ -291,21 +291,21 @@ class Rhel(Distro):
     def copyNetbootImage(self):
         logging.info("Copyt netboot image to tftp server")
         cutdir = len(list(filter(None, self.repoDir.split('/'))))
-        cmd = 'rm -rf ' + self.destDir
+        cmd = 'sudo rm -rf ' + self.destDir
         self.runCommand(self.nxtSrvCon, cmd)
-        cmd = 'mkdir ' + self.destDir
+        cmd = 'sudo mkdir ' + self.destDir
         self.runCommand(self.nxtSrvCon, cmd)
-        cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
+        cmd = 'sudo wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
             + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
             + vmParser.confparser('repo', 'RepoPort') \
             + self.repoDir + '/boot/' + ' -P ' + self.destDir
         self.runCommand(self.nxtSrvCon, cmd)
-        cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
+        cmd = 'sudo wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
             + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
             + vmParser.confparser('repo', 'RepoPort') \
             + self.repoDir + '/ppc/' + ' -P ' + self.destDir
         self.runCommand(self.nxtSrvCon, cmd)
-        cmd = 'grub2-mknetdir --net-directory=' + self.baseURL + \
+        cmd = 'sudo grub2-mknetdir --net-directory=' + self.baseURL + \
             ' --subdir=' + vmParser.netDir + '/boot/grub/'
         self.runCommand(self.nxtSrvCon, cmd)
         self.filename = vmParser.netDir + '/boot/grub/powerpc-ieee1275/core.elf'
@@ -412,6 +412,7 @@ class Rhel(Distro):
         self.createKickstart()
         logging.info("Prepareing GRUB")
         sftp = self.nxtSrvCon.open_sftp()
+        self.runCommand(self.nxtSrvCon, "sudo chmod 777 -R %s" %self.destDir)
         gfd = sftp.open(self.destDir + '/boot/grub/grub.cfg', 'w')
         gfd.write('set timeout=1\n')
         gfd.write('menuentry \'Install OS\' {\n')
@@ -435,7 +436,7 @@ class Rhel(Distro):
         gfd.write('}\n')
         gfd.sftp.close()
         gfm = 'grub.cfg-01-' + (vmParser.args.host_mac).replace(':', '-')
-        cmd = 'cp ' + self.destDir + '/boot/grub/grub.cfg ' + \
+        cmd = 'sudo cp ' + self.destDir + '/boot/grub/grub.cfg ' + \
             self.destDir + '/boot/grub/powerpc-ieee1275/' + gfm
         self.runCommand(self.nxtSrvCon, cmd)
 
