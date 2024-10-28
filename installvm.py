@@ -235,7 +235,7 @@ class Distro():
         self.chkssh = paramiko.SSHClient()
         self.chkssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         iteration = 0
-        while iteration <= 40:
+        while iteration <= 100:
             try:
                 self.chkssh.connect(vmParser.args.host_ip,
                                     username='root', password=vmParser.args.host_password)
