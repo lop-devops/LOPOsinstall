@@ -421,6 +421,9 @@ class Rhel(Distro):
         gfd.write('    set root=tftp,' +
                   vmParser.confparser(vmParser.domain, 'NextServer') + '\n')
         gfd.write('    echo \'Loading OS Install kernel ...\'\n')
+        installer_string = ''
+        if version.startswith('10'):
+            installer_string = 'inst.text inst.xtimeout=300'
         cli_nw = 'ifname=net0:' + vmParser.args.host_mac + ' ip=' + vmParser.args.host_ip + '::' + \
             vmParser.args.host_gw + ':' + vmParser.args.host_netmask + ':' + \
             vmParser.args.host_name + ':' + 'net0:none' + ' nameserver=' + \
@@ -429,7 +432,7 @@ class Rhel(Distro):
             ' inst.repo=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
             self.repoDir + \
             ' inst.ks=http://' + \
-            vmParser.confparser('kshost', 'Host') + self.ksinst + '\n'
+            vmParser.confparser('kshost', 'Host') + self.ksinst + installer_string+'\n'
         gfd.write(strLnx)
         strInit = '    initrd ' + vmParser.netDir + '/ppc/ppc64/initrd.img\n'
         gfd.write(strInit)
