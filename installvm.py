@@ -423,7 +423,7 @@ class Rhel(Distro):
         gfd.write('    echo \'Loading OS Install kernel ...\'\n')
         installer_string = ''
         if version.startswith('10'):
-            installer_string = 'inst.text inst.xtimeout=300'
+            installer_string = ' inst.text inst.xtimeout=300'
         cli_nw = 'ifname=net0:' + vmParser.args.host_mac + ' ip=' + vmParser.args.host_ip + '::' + \
             vmParser.args.host_gw + ':' + vmParser.args.host_netmask + ':' + \
             vmParser.args.host_name + ':' + 'net0:none' + ' nameserver=' + \
