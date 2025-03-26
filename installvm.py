@@ -501,7 +501,7 @@ class Sles(Distro):
             vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
             partition_string = "<device>"+vmParser.args.host_disk+"</device>\n<use>all</use>"
         else:
-            partition_string = "<use>all</use>\n"
+            partition_string = "<use>all</use>\n<partitions config:type=\"list\">\n<partition>\n<mount>/</mount>\n<size>max</size>\n</partition>\n</partitions>\n"
 
         host_name = ''
         if vmParser.args.host_name:
