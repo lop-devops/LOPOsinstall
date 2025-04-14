@@ -235,7 +235,7 @@ class Distro():
         self.chkssh = paramiko.SSHClient()
         self.chkssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         iteration = 0
-        while iteration <= 40:
+        while iteration <= 100:
             try:
                 self.chkssh.connect(vmParser.args.host_ip,
                                     username='root', password=vmParser.args.host_password)
@@ -291,21 +291,21 @@ class Rhel(Distro):
     def copyNetbootImage(self):
         logging.info("Copyt netboot image to tftp server")
         cutdir = len(list(filter(None, self.repoDir.split('/'))))
-        cmd = 'rm -rf ' + self.destDir
+        cmd = 'sudo rm -rf ' + self.destDir
         self.runCommand(self.nxtSrvCon, cmd)
-        cmd = 'mkdir ' + self.destDir
+        cmd = 'sudo mkdir ' + self.destDir
         self.runCommand(self.nxtSrvCon, cmd)
-        cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
+        cmd = 'sudo wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
             + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
             + vmParser.confparser('repo', 'RepoPort') \
             + self.repoDir + '/boot/' + ' -P ' + self.destDir
         self.runCommand(self.nxtSrvCon, cmd)
-        cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
+        cmd = 'sudo wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
             + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
             + vmParser.confparser('repo', 'RepoPort') \
             + self.repoDir + '/ppc/' + ' -P ' + self.destDir
         self.runCommand(self.nxtSrvCon, cmd)
-        cmd = 'grub2-mknetdir --net-directory=' + self.baseURL + \
+        cmd = 'sudo grub2-mknetdir --net-directory=' + self.baseURL + \
             ' --subdir=' + vmParser.netDir + '/boot/grub/'
         self.runCommand(self.nxtSrvCon, cmd)
         self.filename = vmParser.netDir + '/boot/grub/powerpc-ieee1275/core.elf'
@@ -330,6 +330,7 @@ class Rhel(Distro):
             for disk in disks:
                 host_disk += '/dev/disk/by-id/' + disk+','
             vmParser.args.host_disk = host_disk.rstrip(',')
+
         if vmParser.args.install_protocol == 'http':
             if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
                 lstr = "%end"
@@ -339,6 +340,15 @@ class Rhel(Distro):
                 lstr = "telnet\njava\n%end"
                 urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
                     self.repoDir 
+
+        if vmParser.args.install_protocol == 'ftp':
+            #username:password@server/
+            if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
+                lstr = "%end"
+                urlstring = "--url=ftp://"+vmParser.confparser('repo', 'RepoIP') + ':' + self.repoDir + "/BaseOS"
+            else:
+                lstr = "telnet\njava\n%end"
+                urlstring = "--url=ftp://"+vmParser.confparser('repo', 'RepoIP') + ':' + self.repoDir 
 
         if vmParser.args.install_protocol == 'nfs':
             if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
@@ -363,6 +373,22 @@ class Rhel(Distro):
                 addksstring = "autopart --fstype=xfs"
             else:
                 addksstring = "autopart --type=lvm --fstype=xfs"
+
+        exit_nosupport=0
+        if vmParser.args.partition_type not in ['lvm', 'plain']:
+            logging.info("Aborting Installation : as partition type %s is not supported or not valid" % vmParser.args.partition_type)
+            exit_nosupport=1
+
+        if vmParser.args.fs_type not in ['xfs','ext4', 'btrfs']:
+            logging.info("Aborting Installation : as filesystem type %s is not supported or not valid" % vmParser.args.fs_type)
+            exit_nosupport=1
+
+        if vmParser.args.install_protocol not in ['http','nfs','ftp']:
+            logging.info("Aborting Installation : as install protocol type %s is not supported or not valid" % vmParser.args.install_protocol)
+            exit_nosupport=1
+
+        if exit_nosupport:
+            exit(1)
 
         ksparm = sftp.open('/var/www/html'+self.ksinst, 'w')
         sshd_file = ''
@@ -399,6 +425,7 @@ class Rhel(Distro):
         self.createKickstart()
         logging.info("Prepareing GRUB")
         sftp = self.nxtSrvCon.open_sftp()
+        self.runCommand(self.nxtSrvCon, "sudo chmod 777 -R %s" %self.destDir)
         gfd = sftp.open(self.destDir + '/boot/grub/grub.cfg', 'w')
         gfd.write('set timeout=1\n')
         gfd.write('menuentry \'Install OS\' {\n')
@@ -407,6 +434,9 @@ class Rhel(Distro):
         gfd.write('    set root=tftp,' +
                   vmParser.confparser(vmParser.domain, 'NextServer') + '\n')
         gfd.write('    echo \'Loading OS Install kernel ...\'\n')
+        installer_string = ''
+        if version.startswith('10'):
+            installer_string = ' inst.text inst.xtimeout=300'
         cli_nw = 'ifname=net0:' + vmParser.args.host_mac + ' ip=' + vmParser.args.host_ip + '::' + \
             vmParser.args.host_gw + ':' + vmParser.args.host_netmask + ':' + \
             vmParser.args.host_name + ':' + 'net0:none' + ' nameserver=' + \
@@ -415,14 +445,14 @@ class Rhel(Distro):
             ' inst.repo=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
             self.repoDir + \
             ' inst.ks=http://' + \
-            vmParser.confparser('kshost', 'Host') + self.ksinst + '\n'
+            vmParser.confparser('kshost', 'Host') + self.ksinst + installer_string+'\n'
         gfd.write(strLnx)
         strInit = '    initrd ' + vmParser.netDir + '/ppc/ppc64/initrd.img\n'
         gfd.write(strInit)
         gfd.write('}\n')
         gfd.sftp.close()
         gfm = 'grub.cfg-01-' + (vmParser.args.host_mac).replace(':', '-')
-        cmd = 'cp ' + self.destDir + '/boot/grub/grub.cfg ' + \
+        cmd = 'sudo cp ' + self.destDir + '/boot/grub/grub.cfg ' + \
             self.destDir + '/boot/grub/powerpc-ieee1275/' + gfm
         self.runCommand(self.nxtSrvCon, cmd)
 
@@ -484,7 +514,7 @@ class Sles(Distro):
             vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
             partition_string = "<device>"+vmParser.args.host_disk+"</device>\n<use>all</use>"
         else:
-            partition_string = "<use>all</use>\n"
+            partition_string = "<use>all</use>\n<partitions config:type=\"list\">\n<partition>\n<mount>/</mount>\n<size>max</size>\n</partition>\n</partitions>\n"
 
         host_name = ''
         if vmParser.args.host_name:
