@@ -28,7 +28,8 @@ http_conf = '/etc/httpd/conf/httpd.conf'
 http_path = '/var/www/html'
 install_conf = '%s/installvm.conf' % base
 pattern = ['NextServer', 'DHCPServer', 'Host', 'Password']
-pips = ['--upgrade pip', '--upgrade setuptools', 'cryptography==2.4.2', 'paramiko', 'aexpect']
+pips = ['--upgrade pip', '--upgrade setuptools',
+        'cryptography==2.4.2', 'paramiko', 'aexpect']
 deps = [
     'ksh', 'wget', 'xinetd', 'dhcp', 'dhcp-common', 'dhcp-libs', 'dnsmasq', 'tftp', 'tftp-server', 'vsftpd', 'python2-pip', 'expect', 'pexpect', 'python-setuptools',
     'gcc', 'python-devel', 'python-cffi', 'libffi-devel', 'openssl-devel', 'pyOpenSSL', 'openssl', 'openssl-libs', 'python-netaddr', 'httpd', 'httpd-devel', 'initscripts', 'net-tools', 'sshpass']
@@ -127,17 +128,17 @@ class peerSetup():
         path = "%s/%s/%s/%s" % (http_path, self.repo_path, distro, version)
         build_path = '%s/%s' % (path, build)
         if not os.path.exists(build_path):
-            cmd = "mkdir -p %s" %  build_path
+            cmd = "mkdir -p %s" % build_path
             self.run_cmd(cmd)
             logging.info("Distro packages downloading...")
-            cmd = 'rsync -az --exclude "*.iso" --rsh="sshpass -p passw0rd ssh -o StrictHostKeyChecking=no -l root" %s:%s %s' % (self.repo, build_path, path)
+            cmd = 'rsync -az --exclude "*.iso" --rsh="sshpass -p passw0rd ssh -o StrictHostKeyChecking=no -l root" %s:%s %s' % (
+                self.repo, build_path, path)
             self.run_cmd(cmd)
         else:
             cmd = "ls %s" % build_path
             self.run_cmd(cmd)
             logging.info("%s Repo is already set" % build_path)
-            
-                        
+
     def setTftp(self):
         path = '/var/lib/tftpboot'
         if not os.path.exists(path):
@@ -205,7 +206,8 @@ def main():
     http_port = args.http_port
     repo_path = args.repo_path
     distro = args.distro
-    peer = peerSetup(nic_mac, nic_ip, nic_mask, passwd, repo_ip, http_port, repo_path)
+    peer = peerSetup(nic_mac, nic_ip, nic_mask, passwd,
+                     repo_ip, http_port, repo_path)
     if args.clean:
         peer.tearDown()
         sys.exit(0)

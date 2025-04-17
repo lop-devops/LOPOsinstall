@@ -15,7 +15,6 @@
 # Author: Praveen K Pandey <praveen@linux.vnet.ibm.com>
 
 import argparse
-import sys
 import configparser
 import os
 import logging
@@ -74,9 +73,11 @@ class CmdLineArgParser():
         parser.add_argument(
             '--distro', help='distro to be installed ex: rhel_7.4le_alpa, sles_11sp3_beta', required=True)
         parser.add_argument(
-            '--install-protocol' , help='Mode of Install Protocol ex: http, ftp, nfs',default='http')
-        parser.add_argument('--fs-type' ,help='RootFS type ex: xfs, ext4, btrfs',default='xfs')
-        parser.add_argument('--partition-type' ,help='Boot disk partition type with or without lvm ex: plain or lvm',default='lvm')
+            '--install-protocol', help='Mode of Install Protocol ex: http, ftp, nfs', default='http')
+        parser.add_argument(
+            '--fs-type', help='RootFS type ex: xfs, ext4, btrfs', default='xfs')
+        parser.add_argument(
+            '--partition-type', help='Boot disk partition type with or without lvm ex: plain or lvm', default='lvm')
         parser.add_argument(
             '--set-boot-order', help='yes/True to set the boot disk order', required=False)
         parser.add_argument(
@@ -106,7 +107,7 @@ class CmdLineArgParser():
         if rc:
             logging.info("%s not reachable : %s" % (name, addr))
             logging.info("Aborting Installation : Check log for errors")
-            exit (1)
+            exit(1)
         logging.info("%s is reachable : OK" % name)
 
     def validate(self):
