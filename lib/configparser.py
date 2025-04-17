@@ -15,7 +15,6 @@
 # Author: Praveen K Pandey <praveen@linux.vnet.ibm.com>
 
 import argparse
-import sys
 import configparser
 import os
 import logging

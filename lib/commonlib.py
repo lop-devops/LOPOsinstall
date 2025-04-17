@@ -22,7 +22,7 @@ import logging
 try:
     import pexpect
 except ImportError:
-    print "please install pexpect module"
+    print ("please install pexpect module")
 
 
 class CommonLib():
