@@ -15,14 +15,13 @@
 # Author: Praveen K Pandey <praveen@linux.vnet.ibm.com>
 
 
-import os
 import sys
 import time
 import logging
 try:
     import pexpect
 except ImportError:
-    print ("please install pexpect module")
+    print("please install pexpect module")
 
 
 class CommonLib():
