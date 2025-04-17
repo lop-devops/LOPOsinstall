@@ -17,7 +17,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pylint
+        pip install -r requirements-travis.txt
     - name: Analysing the code with pylint
       run: |
         inspekt checkall --disable-lint W,R,C,C0103,C0301,W0613,R1722,C0209,C0116,R0917,R0913 --no-license-check
