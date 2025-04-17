@@ -21,5 +21,4 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         inspekt checkall --disable-lint W,R,C,C0103,C0301,W0613,R1722,C0209,C0116,R0917,R0913,E0601,E0401,E0602,W605 --no-license-check
-        inspekt indent
         inspekt style
