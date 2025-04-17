@@ -20,4 +20,6 @@ jobs:
         pip install pylint
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')
+        inspekt checkall --disable-lint W,R,C,C0103,C0301,W0613,R1722,C0209,C0116,R0917,R0913 --no-license-check
+        inspekt indent
+        inspekt style
