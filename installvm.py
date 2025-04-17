@@ -280,7 +280,8 @@ class Distro():
         self.system.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.system.connect(vmParser.args.host_ip, username='root',
                             password=vmParser.args.host_password)
-        cmd = 'openssl s_client -showcerts -servername %s -connect %s:443 > /etc/pki/trust/anchors/cacert.pem' % (vmParser.args.ssl_server, vmParser.args.ssl_server)
+        cmd = 'openssl s_client -showcerts -servername %s -connect %s:443 > /etc/pki/trust/anchors/cacert.pem' % (
+            vmParser.args.ssl_server, vmParser.args.ssl_server)
         self.runCommand(self.system, cmd)
         cmd = 'update-ca-certificates'
         self.runCommand(self.system, cmd)
@@ -311,7 +312,8 @@ class Rhel(Distro):
         cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
             + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
             + vmParser.confparser('repo', 'RepoPort') \
-            + self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf ' +  self.destDir+"/grub/powerpc-ieee1275/core.elf"
+            + self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf ' + \
+            self.destDir+"/grub/powerpc-ieee1275/core.elf"
         self.runCommand(self.nxtSrvCon, cmd)
         self.filename = vmParser.netDir + '/boot/grub/powerpc-ieee1275/core.elf'
 
@@ -337,31 +339,38 @@ class Rhel(Distro):
             vmParser.args.host_disk = host_disk.rstrip(',')
 
         if vmParser.args.install_protocol == 'http':
-            if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
+            if version.startswith('8') or version.startswith('9') or version.startswith('10'):
                 lstr = "%end"
                 urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
                     self.repoDir + "/BaseOS"
             else:
                 lstr = "telnet\njava\n%end"
                 urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                    self.repoDir 
+                    self.repoDir
 
         if vmParser.args.install_protocol == 'ftp':
-            #username:password@server/
-            if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
+            # username:password@server/
+            if version.startswith('8') or version.startswith('9') or version.startswith('10'):
                 lstr = "%end"
-                urlstring = "--url=ftp://"+vmParser.confparser('repo', 'RepoIP') + ':' + self.repoDir + "/BaseOS"
+                urlstring = "--url=ftp://" + \
+                    vmParser.confparser('repo', 'RepoIP') + \
+                    ':' + self.repoDir + "/BaseOS"
             else:
                 lstr = "telnet\njava\n%end"
-                urlstring = "--url=ftp://"+vmParser.confparser('repo', 'RepoIP') + ':' + self.repoDir 
+                urlstring = "--url=ftp://" + \
+                    vmParser.confparser('repo', 'RepoIP') + ':' + self.repoDir
 
         if vmParser.args.install_protocol == 'nfs':
-            if version.startswith('8') or  version.startswith('9') or version.startswith('10'):
+            if version.startswith('8') or version.startswith('9') or version.startswith('10'):
                 lstr = "%end"
-                urlstring = "--url=nfs://"+vmParser.confparser('repo', 'RepoIP') + ':/var/www/html' + self.repoDir +  "/BaseOS"
+                urlstring = "--url=nfs://" + \
+                    vmParser.confparser('repo', 'RepoIP') + \
+                    ':/var/www/html' + self.repoDir + "/BaseOS"
             else:
                 lstr = "telnet\njava\n%end"
-                urlstring = "--url=nfs://"+vmParser.confparser('repo', 'RepoIP') + ':/var/www/html' + self.repoDir  
+                urlstring = "--url=nfs://" + \
+                    vmParser.confparser('repo', 'RepoIP') + \
+                    ':/var/www/html' + self.repoDir
 
         if vmParser.args.fs_type == 'btrfs':
             if vmParser.args.partition_type == 'plain':
@@ -379,18 +388,21 @@ class Rhel(Distro):
             else:
                 addksstring = "autopart --type=lvm --fstype=xfs"
 
-        exit_nosupport=0
+        exit_nosupport = 0
         if vmParser.args.partition_type not in ['lvm', 'plain']:
-            logging.info("Aborting Installation : as partition type %s is not supported or not valid" % vmParser.args.partition_type)
-            exit_nosupport=1
+            logging.info("Aborting Installation : as partition type %s is not supported or not valid" %
+                         vmParser.args.partition_type)
+            exit_nosupport = 1
 
-        if vmParser.args.fs_type not in ['xfs','ext4', 'btrfs']:
-            logging.info("Aborting Installation : as filesystem type %s is not supported or not valid" % vmParser.args.fs_type)
-            exit_nosupport=1
+        if vmParser.args.fs_type not in ['xfs', 'ext4', 'btrfs']:
+            logging.info(
+                "Aborting Installation : as filesystem type %s is not supported or not valid" % vmParser.args.fs_type)
+            exit_nosupport = 1
 
-        if vmParser.args.install_protocol not in ['http','nfs','ftp']:
-            logging.info("Aborting Installation : as install protocol type %s is not supported or not valid" % vmParser.args.install_protocol)
-            exit_nosupport=1
+        if vmParser.args.install_protocol not in ['http', 'nfs', 'ftp']:
+            logging.info("Aborting Installation : as install protocol type %s is not supported or not valid" %
+                         vmParser.args.install_protocol)
+            exit_nosupport = 1
 
         if exit_nosupport:
             exit(1)
@@ -402,22 +414,22 @@ class Rhel(Distro):
             kernel_params = " --append="+'\"'+vmParser.args.kernel_params+'\"'
         mpath_file = ";multipath -t >/etc/multipath.conf;service multipathd start"
         if vmParser.args.multipathsetup != '':
-            sshd_file="\n%post \n"+mpath_file+"\n%end"
+            sshd_file = "\n%post \n"+mpath_file+"\n%end"
         if version.startswith('9') or version.startswith('10'):
-            sshd_file="\n%post \nsed -i 's/#\?PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;service sshd restart"+mpath_file+"\n%end"
+            sshd_file = "\n%post \nsed -i 's/#\?PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;service sshd restart"+mpath_file+"\n%end"
         if version.startswith('10'):
-            timezone=""
+            timezone = ""
         else:
-            timezone="--isUtc"
+            timezone = "--isUtc"
 
         inst_param = "%pre\n%end\nurl "+urlstring, "\ntext\nkeyboard"\
                      " --vckeymap=us --xlayouts='us'\nlang en_US.UTF-8\n"\
                      "rootpw --plaintext " + vmParser.args.host_password, \
-                     "\nskipx\ntimezone Asia/Kolkata " +timezone, \
+                     "\nskipx\ntimezone Asia/Kolkata " + timezone, \
                      "\nzerombr" \
                      "\nclearpart --all --initlabel "\
                      "--drives=" + vmParser.args.host_disk, \
-                     "\nbootloader   --location=mbr --boot-drive=" + vmParser.args.host_disk+kernel_params , \
+                     "\nbootloader   --location=mbr --boot-drive=" + vmParser.args.host_disk+kernel_params, \
                      "\nignoredisk --only-use=" + vmParser.args.host_disk, \
                      "\n" + addksstring, \
                      "\nservices --enabled=NetworkManager,sshd" \
@@ -430,7 +442,7 @@ class Rhel(Distro):
         self.createKickstart()
         logging.info("Prepareing GRUB")
         sftp = self.nxtSrvCon.open_sftp()
-        self.runCommand(self.nxtSrvCon, "sudo chmod 777 -R %s" %self.destDir)
+        self.runCommand(self.nxtSrvCon, "sudo chmod 777 -R %s" % self.destDir)
         gfd = sftp.open(self.destDir + '/boot/grub/grub.cfg', 'w')
         gfd.write('set timeout=1\n')
         gfd.write('menuentry \'Install OS\' {\n')
@@ -450,7 +462,8 @@ class Rhel(Distro):
             ' inst.repo=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
             self.repoDir + \
             ' inst.ks=http://' + \
-            vmParser.confparser('kshost', 'Host') + self.ksinst + installer_string+'\n'
+            vmParser.confparser('kshost', 'Host') + \
+            self.ksinst + installer_string+'\n'
         gfd.write(strLnx)
         strInit = '    initrd ' + vmParser.netDir + '/ppc/ppc64/initrd.img\n'
         gfd.write(strInit)
@@ -481,11 +494,12 @@ class Sles(Distro):
                 ' --subdir=' + vmParser.netDir + '/boot/ppc64le/grub2-ieee1275/'
             self.runCommand(self.nxtSrvCon, cmd)
             cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
-            	+ ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
-            	+ vmParser.confparser('repo', 'RepoPort') \
-            	+ self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf ' +  self.destDir+"/grub/powerpc-ieee1275/core.elf"
+                + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
+                + vmParser.confparser('repo', 'RepoPort') \
+                + self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf ' + \
+                self.destDir+"/grub/powerpc-ieee1275/core.elf"
             self.runCommand(self.nxtSrvCon, cmd)
-	    self.runCommand(self.nxtSrvCon, 'chmod 777 -R ' + self.destDir)
+            self.runCommand(self.nxtSrvCon, 'chmod 777 -R ' + self.destDir)
             self.filename = vmParser.netDir + \
                 '/boot/ppc64le/grub2-ieee1275/powerpc-ieee1275/core.elf'
         else:
@@ -516,7 +530,8 @@ class Sles(Distro):
         multipath_string = ''
         kernel_params = 'mitigations=auto quiet crashkernel=1024M '
         if not vmParser.args.kernel_params:
-            kernel_params = "%s %s" % (kernel_params, vmParser.args.kernel_params)
+            kernel_params = "%s %s" % (
+                kernel_params, vmParser.args.kernel_params)
 
         if vmParser.args.multipathsetup != '':
             multipath_string = "<storage>\n<start_multipath config:type=\"boolean\">true</start_multipath>\n</storage>"
@@ -538,7 +553,7 @@ class Sles(Distro):
             self.repoDir + "/sdk"
         if '15' in version:
             subversion = ''
-            python_str= ''
+            python_str = ''
             if version[2:5]:
                 subversion = version[2:5].upper()+"-"
                 if 'SP' in subversion:
@@ -547,10 +562,10 @@ class Sles(Distro):
                 if 'SP1' in subversion:
                     urlstring = "http://"+vmParser.confparser(
                         'repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir+'/sdk'
-                    python_str="<listentry>\n" \
-                                   "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
-                                   "<product>sle-module-python2</product>\n<product_dir>/Module-Python2</product_dir>\n" \
-                                   "</listentry>\n"
+                    python_str = "<listentry>\n" \
+                        "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
+                        "<product>sle-module-python2</product>\n<product_dir>/Module-Python2</product_dir>\n" \
+                        "</listentry>\n"
                 value = ["SP4", "SP3", "SP1", "SP5"]
                 if any(x in subversion for x in value):
                     python_str = ''
@@ -571,7 +586,7 @@ class Sles(Distro):
                 "</listentry>\n<listentry>\n" \
                 "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
                 "<product>sle-module-basesystem</product>\n<product_dir>/"+subversion+"Module-Basesystem</product_dir>\n" \
-                "</listentry>\n"+python_str+ \
+                "</listentry>\n"+python_str + \
                 "</add_on_products>\n</add-on>\n"
 
             sles_package = "<package>sles-release</package><package>sle-module-server-applications-release</package>\n" \
@@ -610,7 +625,7 @@ class Sles(Distro):
                      "<package>gcc-c++</package>\n"+sles_package+"</software>\n<scripts>\n<post-scripts config:type=\"list\">\n<script>\n" \
                      "<filename>setupssh.sh</filename>\n<interpreter>shell</interpreter>\n<debug config:type=\"boolean\">true</debug>\n" \
                      "<source><![CDATA[\nsystemctl enable sshd.service\nsystemctl start sshd.service\n]]></source>\n" \
-                    "</script>\n</post-scripts>\n</scripts>\n</profile>\n"
+            "</script>\n</post-scripts>\n</scripts>\n</profile>\n"
         ksparm.writelines(inst_param)
         ksparm.sftp.close()
 
