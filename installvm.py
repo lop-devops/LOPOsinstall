@@ -605,7 +605,7 @@ class Sles(Distro):
             sles_package = "<package>java-1_8_0-openjdk</package></packages>\n"
         print(self.ksinst)
         ksparm = sftp.open('/var/www/html'+self.ksinst, 'w')
-        inst_param = r"<xml version="1.0">\n<!DOCTYPE profile>\n" \
+        inst_param = r'<xml version="1.0">\n<!DOCTYPE profile>\n' \
                      "<profile xmlns=\"http://www.suse.com/1.0/yast2ns\" xmlns:config=\"http://www.suse.com/1.0/configns\">\n"+sles15_url+""\
                      "<bootloader>\n<global>\n<append>"+kernel_params+"</append>\n" \
                      "<xen_kernel_append>crashkernel=1024M\&lt;4G</xen_kernel_append>\n</global>\n</bootloader>\n" \
