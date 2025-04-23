@@ -312,8 +312,8 @@ class Rhel(Distro):
         cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
             + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
             + vmParser.confparser('repo', 'RepoPort') \
-            + self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf ' + \
-            self.destDir+"/grub/powerpc-ieee1275/core.elf"
+            + self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf -P ' + \
+            self.destDir+"/boot/grub/powerpc-ieee1275/"
         self.runCommand(self.nxtSrvCon, cmd)
         self.filename = vmParser.netDir + '/boot/grub/powerpc-ieee1275/core.elf'
 
@@ -496,8 +496,8 @@ class Sles(Distro):
             cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
                 + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
                 + vmParser.confparser('repo', 'RepoPort') \
-                + self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf ' + \
-                self.destDir+"/grub/powerpc-ieee1275/core.elf"
+                + self.repoDir + '/boot/ppc64le/grub2-ieee1275/core.elf -P ' + \
+                self.destDir+"/boot/ppc64le/grub2-ieee1275/powerpc-ieee1275/"
             self.runCommand(self.nxtSrvCon, cmd)
             self.runCommand(self.nxtSrvCon, 'chmod 777 -R ' + self.destDir)
             self.filename = vmParser.netDir + \
