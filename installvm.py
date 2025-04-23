@@ -312,8 +312,8 @@ class Rhel(Distro):
         cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
             + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
             + vmParser.confparser('repo', 'RepoPort') \
-            + self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf ' + \
-            self.destDir+"/grub/powerpc-ieee1275/core.elf"
+            + self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf -P ' + \
+            self.destDir+"/boot/grub/powerpc-ieee1275/"
         self.runCommand(self.nxtSrvCon, cmd)
         self.filename = vmParser.netDir + '/boot/grub/powerpc-ieee1275/core.elf'
 
@@ -496,8 +496,8 @@ class Sles(Distro):
             cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
                 + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
                 + vmParser.confparser('repo', 'RepoPort') \
-                + self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf ' + \
-                self.destDir+"/grub/powerpc-ieee1275/core.elf"
+                + self.repoDir + '/boot/ppc64le/grub2-ieee1275/core.elf -P ' + \
+                self.destDir+"/boot/ppc64le/grub2-ieee1275/powerpc-ieee1275/"
             self.runCommand(self.nxtSrvCon, cmd)
             self.runCommand(self.nxtSrvCon, 'chmod 777 -R ' + self.destDir)
             self.filename = vmParser.netDir + \
@@ -605,7 +605,7 @@ class Sles(Distro):
             sles_package = "<package>java-1_8_0-openjdk</package></packages>\n"
         print(self.ksinst)
         ksparm = sftp.open('/var/www/html'+self.ksinst, 'w')
-        inst_param = r"<xml version="1.0">\n<!DOCTYPE profile>\n" \
+        inst_param = "<?xml version=\"1.0\"?>\n<!DOCTYPE profile>\n" \
                      "<profile xmlns=\"http://www.suse.com/1.0/yast2ns\" xmlns:config=\"http://www.suse.com/1.0/configns\">\n"+sles15_url+""\
                      "<bootloader>\n<global>\n<append>"+kernel_params+"</append>\n" \
                      "<xen_kernel_append>crashkernel=1024M\&lt;4G</xen_kernel_append>\n</global>\n</bootloader>\n" \
