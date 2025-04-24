@@ -416,7 +416,7 @@ class Rhel(Distro):
         if vmParser.args.multipathsetup != '':
             sshd_file = "\n%post \n"+mpath_file+"\n%end"
         if version.startswith('9') or version.startswith('10'):
-            sshd_file = r"\n%post \nsed -i 's/#\?PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;service sshd restart"+mpath_file+"\n%end"
+            sshd_file = "\n%post \nsed -i 's/#\?PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;service sshd restart"+mpath_file+"\n%end"
         if version.startswith('10'):
             timezone = ""
         else:
