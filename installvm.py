@@ -830,13 +830,13 @@ systemctl start sshd.service
             gfd.write('\n')
             cli_nw = 'rd.neednet=1 ' + 'ip=' + vmParser.args.host_ip + '::' + vmParser.args.host_gw + ':' + vmParser.args.host_netmask + \
                     ':' + vmParser.args.host_name + '::none' + ' nameserver=' + vmParser.confparser(vmParser.domain, 'DNS') 
-            strLnx = '    linux ' + httppath + httplinux + cli_nw + \
+            strLnx = '    linux ' + vmParser.netDir + '/boot/ppc64le/linux' + cli_nw + \
                     ' agama.install_url=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
                     self.repoDir +'/install  root=live:http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')  + \
                     self.repoDir + '/LiveOS/squashfs.img  live.password=abc123' + \
                     ' inst.auto=http://' +vmParser.confparser('kshost', 'Host') + self.ksinst + '\n'
             gfd.write(strLnx)
-            strInit = '    initrd ' + httppath + httpintrd+'\n'
+            strInit = '    initrd ' + vmParser.netDir + '/boot/ppc64le/initrd\n'
             gfd.write(strInit)
             gfd.write('}')
             gfd.close()
