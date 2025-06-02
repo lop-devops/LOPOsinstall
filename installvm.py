@@ -737,12 +737,17 @@ systemctl start sshd.service
         self.KsHost.connect(vmParser.confparser('kshost', 'Host'),
                             username=vmParser.confparser('kshost', 'User'),
                             password=vmParser.confparser('kshost', 'Password'))
-        print ("in json net")
         sftp = self.KsHost.open_sftp()
         self.ksinst = vmParser.confparser('kshost', 'KsDir') + '/sles/' + vmParser.args.host_mac + '.jsonnet'
         remote_path = '/var/www/html' + self.ksinst
 
         ip_cidr = f"{vmParser.args.host_ip}/{netaddr.IPNetwork(vmParser.args.host_ip + '/' + vmParser.args.host_netmask).prefixlen}"
+        if vmParser.args.host_disk:
+            # Accept only if it has disk ID
+            #WORKAROUND: https://bugzilla.linux.ibm.com/show_bug.cgi?id=213264#c64
+            if "-" not in vmParser.args.host_disk:
+                print(f"ERROR: '{vmParser.args.host_disk}' looks like a device name (e.g., sda, nvme0n1). Please provide a disk ID from /dev/disk/by-id/", file=sys.stderr)
+                sys.exit(1)
         disk_id = f"/dev/disk/by-id/{vmParser.args.host_disk}"
         nameserver = vmParser.confparser(vmParser.domain, 'DNS')
         pre_script_block = ''
