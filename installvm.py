@@ -20,8 +20,6 @@ import paramiko
 import re
 import netaddr
 import time
-import json
-import posixpath
 import logging
 import logging.config
 from datetime import datetime
@@ -154,8 +152,6 @@ class Distro():
         cmd = 'rm -rf /tmp/dhcpd.conf'
         self.runCommand(self.dhcpSrvCon, cmd)
         cmd = 'setenforce Permissive'
-        if 'restart dhcpd' in cmd:
-            self.runCommand(self.dhcpSrvCon, 'dhcpd -t -cf /etc/dhcp/dhcpd.conf')
         self.runCommand(self.dhcpSrvCon, cmd)
         cmd = 'systemctl restart dhcpd'
         self.runCommand(self.dhcpSrvCon, cmd)
@@ -319,7 +315,7 @@ class Rhel(Distro):
             + self.repoDir + '/boot/grub/powerpc-ieee1275/core.elf -P ' + \
             self.destDir+"/boot/grub/powerpc-ieee1275/"
         self.runCommand(self.nxtSrvCon, cmd)
-        self.filename = vmParser.netDir + '/boot/grub/powerpc-ieee1275/core.elf'    
+        self.filename = vmParser.netDir + '/boot/grub/powerpc-ieee1275/core.elf'
 
     def createKickstart(self):
         logging.info("Prepareing kick start file")
@@ -350,7 +346,7 @@ class Rhel(Distro):
             else:
                 lstr = "telnet\njava\n%end"
                 urlstring = "--url=http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                    self.repoDir     
+                    self.repoDir
 
         if vmParser.args.install_protocol == 'ftp':
             # username:password@server/
@@ -390,9 +386,9 @@ class Rhel(Distro):
             if vmParser.args.partition_type == 'plain':
                 addksstring = "autopart --fstype=xfs"
             else:
-                addksstring = "autopart --type=lvm --fstype=xfs" 
-        exit_nosupport = 0
+                addksstring = "autopart --type=lvm --fstype=xfs"
 
+        exit_nosupport = 0
         if vmParser.args.partition_type not in ['lvm', 'plain']:
             logging.info("Aborting Installation : as partition type %s is not supported or not valid" %
                          vmParser.args.partition_type)
@@ -424,7 +420,7 @@ class Rhel(Distro):
         if version.startswith('10'):
             timezone = ""
         else:
-            timezone = "--isUtc"            
+            timezone = "--isUtc"
 
         inst_param = "%pre\n%end\nurl "+urlstring, "\ntext\nkeyboard"\
                      " --vckeymap=us --xlayouts='us'\nlang en_US.UTF-8\n"\
@@ -440,7 +436,7 @@ class Rhel(Distro):
                      "\nreboot\n%packages\n@core\nkexec-tools\ndevice-mapper-multipath\n"+lstr+sshd_file
 
         ksparm.writelines(inst_param)
-        ksparm.sftp.close()    
+        ksparm.sftp.close()
 
     def configGrub(self):
         self.createKickstart()
@@ -482,253 +478,58 @@ class Rhel(Distro):
 class Sles(Distro):
 
     def copyNetbootImage(self):
-        logging.info("Copying netboot image to TFTP server")
+        logging.info("Copyt netboot image to tftp server")
         cutdir = len(list(filter(None, self.repoDir.split('/'))))
         cmd = 'rm -rf ' + self.destDir
         self.runCommand(self.nxtSrvCon, cmd)
-        cmd = 'mkdir -p ' + self.destDir
+        cmd = 'mkdir ' + self.destDir
         self.runCommand(self.nxtSrvCon, cmd)
-
-        if '11SP' in version.upper():
-            cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
-                + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
-                + vmParser.confparser('repo', 'RepoPort') \
-                + self.repoDir + '/suseboot/' + ' -P ' + self.destDir
+        if '16SP' in version.upper():
+            cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' +  vmParser.confparser('repo', 'RepoPort') + self.repoDir + '/LiveOS/squashfs.img -P '  + self.destDir + '/LiveOS/'
             self.runCommand(self.nxtSrvCon, cmd)
-            cmd = 'mv ' + self.destDir + '/suseboot/yaboot.ibm ' + self.destDir + '/suseboot/yaboot.suse'
-            self.runCommand(self.nxtSrvCon, cmd)
-            self.filename = vmParser.netDir + '/suseboot/yaboot.suse'
-        else:
-            if '16' in version:
-                cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' +  vmParser.confparser('repo', 'RepoPort') + self.repoDir + '/LiveOS/squashfs.img -P '  + self.destDir + '/LiveOS/'
-                print("Before install..")
-            else:
-                cmd = 'wget -r --reject="index.html*" --no-parent -nH --cut-dir=' + str(cutdir) + \
-                    ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' + \
-                    vmParser.confparser('repo', 'RepoPort') + self.repoDir + '/install/' + \
-                    ' -P ' + self.destDir 
-            self.runCommand(self.nxtSrvCon, cmd)  
             cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
                 + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
                 + vmParser.confparser('repo', 'RepoPort') \
                 + self.repoDir + '/boot/' + ' -P ' + self.destDir
             self.runCommand(self.nxtSrvCon, cmd)
+            print("second cmd: {cmd}")
             cmd = 'grub2-mknetdir --net-directory=' + self.baseURL + ' --subdir=' + vmParser.netDir + '/boot/ppc64le/grub2-ieee1275/'
-            self.runCommand(self.nxtSrvCon, cmd)
+            print(cmd)
+            self.runCommand(self.nxtSrvCon, cmd)  
             src_cfg = self.destDir + '/boot/grub2/grub.cfg'
             dest_cfg = self.destDir + '/boot/ppc64le/grub2-ieee1275/grub.cfg'
             cmd = f'cp {src_cfg} {dest_cfg}'
-            self.runCommand(self.nxtSrvCon, cmd)
-            if '16' not in version:
-                cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
-                    + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
-                    + vmParser.confparser('repo', 'RepoPort') \
-                    + self.repoDir + '/boot/ppc64le/grub2-ieee1275/core.elf -P ' + self.destDir + '/boot/ppc64le/grub2-ieee1275/powerpc-ieee1275/'
-                self.runCommand(self.nxtSrvCon, cmd)
+            self.runCommand(self.nxtSrvCon, cmd)  
             self.runCommand(self.nxtSrvCon, 'chmod 777 -R ' + self.destDir)
-            self.filename = vmParser.netDir + '/boot/ppc64le/grub2-ieee1275/powerpc-ieee1275/core.elf'
-
-        def createKickstart(self):
-            logging.info("Preparing kickstart file for SLES15")
-            self.KsHost = paramiko.SSHClient()
-            self.KsHost.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            self.KsHost.connect(vmParser.confparser('kshost', 'Host'),
-                            username=vmParser.confparser('kshost', 'User'),
-                            password=vmParser.confparser('kshost', 'Password'))
-
-            sftp = self.KsHost.open_sftp()
-            self.ksinst = vmParser.confparser('kshost', 'KsDir') + '/' + distro + '/' + distro + '-' + vmParser.args.host_mac + '.ks'
-
-            partition_string = ''
-            multipath_string = ''
-            kernel_params = 'mitigations=auto quiet crashkernel=1024M '
-            if vmParser.args.kernel_params:
-                kernel_params = f"{kernel_params} {vmParser.args.kernel_params}"
-
-            if vmParser.args.multipathsetup:
-                multipath_string = '<storage>\n <start_multipath config:type="boolean">true</start_multipath>\n</storage>'
-
-            if vmParser.args.host_disk:
-                vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
-                partition_string = f"<device>{vmParser.args.host_disk}</device> <use>all</use>"
-            else:
-                partition_string = """<use>all</use>
-                        <partitions config:type=\"list\">
-                        <partition>
-                    <mount>/</mount>
-                    <size>max</size>
-                    </partition>
-                    </partitions"""
-
-            host_name = vmParser.args.host_name if vmParser.args.host_name else "localhost"
-            urlstring = "http://" + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + self.repoDir + "/sdk"
-            sles15_url = ''
-            sles_package = ''
-
-            if '15' in version:
-                subversion = version[2:5].upper() + "-" if version[2:5] else ''
-                if 'SP' in subversion:
-                    urlstring = "http://" + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + self.repoDir
-
-                python_str = ""
-                if 'SP1' in subversion:
-                    python_str = f"""<listentry>
-<media_url><![CDATA[{urlstring}]]></media_url>
-<product>sle-module-python2</product>
-<product_dir>/Module-Python2</product_dir>
-</listentry>
-"""
-
-                value = ["SP4", "SP3", "SP1", "SP5"]
-                if any(x in subversion for x in value):
-                    python_str = ''
-
-                sles15_url = f"""<add-on>
-<add_on_products config:type=\"list\">
-<listentry>
-<media_url><![CDATA[{urlstring}]]></media_url>
-<product>sle-module-server-applications</product>
-<product_dir>/{subversion}Module-Server-Applications</product_dir>
-</listentry>
-""" \
-                         f"""<listentry>
-<media_url><![CDATA[{urlstring}]]></media_url>
-<product>sle-module-legacy</product>
-<product_dir>/{subversion}Module-Legacy</product_dir>
-</listentry>
-""" \
-                         f"""<listentry>
-<media_url><![CDATA[{urlstring}]]></media_url>
-<product>sle-module-development-tools</product>
-<product_dir>/{subversion}Module-Development-Tools</product_dir>
-</listentry>
-""" \
-                         f"""<listentry>
-<media_url><![CDATA[{urlstring}]]></media_url>
-<product>sle-module-desktop-applications</product>
-<product_dir>/{subversion}Module-Desktop-Applications</product_dir>
-</listentry>
-""" \
-                         f"""<listentry>
-<media_url><![CDATA[{urlstring}]]></media_url>
-<product>sle-module-basesystem</product>
-<product_dir>/{subversion}Module-Basesystem</product_dir>
-</listentry>
-""" + python_str + """</add_on_products>
-</add-on>
-"""
-
-                sles_package = "<package>sles-release</package><package>sle-module-server-applications-release</package>" \
-                           "<package>sle-module-legacy-release</package>" \
-                           "<package>sle-module-development-tools-release</package><package>sle-module-desktop-applications-release</package>" \
-                           "<package>sle-module-basesystem-release</package><package>java-11-openjdk</package></packages><patterns config:type=\"list\"><pattern>apparmor</pattern>" \
-                           "<pattern>base</pattern>" \
-                           "<pattern>basesystem</pattern><pattern>enhanced_base</pattern><pattern>fonts</pattern><pattern>gnome_basic</pattern>" \
-                           "<pattern>gnome_basis</pattern><pattern>minimal_base</pattern><pattern>sw_management</pattern><pattern>x11</pattern>" \
-                           "<pattern>x11_enhanced</pattern><pattern>x11_yast</pattern><pattern>yast2_basis</pattern></patterns>"
-            else:
-                sles15_url = f"""<add-on>
-<add_on_products config:type=\"list\">
-<listentry>
-<media_url><![CDATA[{urlstring}]]></media_url>
-<product>sle-module-server-applications</product>
-<product_dir>/</product_dir>
-</listentry>
-</add_on_products>
-</add-on>
-"""
-                sles_package = "<package>java-1_8_0-openjdk</package></packages>"
-
-            print(self.ksinst)
-            ksparm = sftp.open('/var/www/html' + self.ksinst, 'w')
-            inst_param = f"""<?xml version=\"1.0\"?>
-<!DOCTYPE profile>
-<profile xmlns=\"http://www.suse.com/1.0/yast2ns\" xmlns:config=\"http://www.suse.com/1.0/configns\">
-""" + \
-                      sles15_url + \
-                      f"""<bootloader>
-<global>
-<append>{kernel_params}</append>
-<xen_kernel_append>crashkernel=1024M\&lt;4G</xen_kernel_append>
-</global>
-</bootloader>
-""" + \
-                      f"""<kdump>
-<add_crash_kernel t=\"boolean\">true</add_crash_kernel>
-<crash_kernel>1024M</crash_kernel>
-<crash_xen_kernel>1024M\&lt;4G</crash_xen_kernel>
-</kdump>
-""" + \
-                      f"""<users config:type=\"list\">
-<user>
-<encrypted config:type=\"boolean\">false</encrypted>
-<user_password>{vmParser.args.host_password}</user_password>
-<username>root</username>
-</user>
-</users>
-""" + \
-                      f"""<general>
-<mode>
-<confirm config:type=\"boolean\">false</confirm>
-</mode>
-{multipath_string}</general>
-""" + \
-                      f"""<partitioning config:type=\"list\">
-<drive>
-{partition_string}</drive>
-</partitioning>
-""" + \
-                      f"""<services-manager>
-<default_target>multi-user</default_target>
-<services>
-<disable config:type=\"list\">
-<service>sshd</service>
-</disable>
-</services>
-</services-manager>
-""" + \
-                      f"""<firewall>
-<enable_firewall config:type=\"boolean\">false</enable_firewall>
-<start_firewall config:type=\"boolean\">false</start_firewall>
-</firewall>
-""" + \
-                      f"""<networking>
-<dns>
-<hostname>{host_name}</hostname>
-</dns>
-<managed config:type=\"boolean\">false</managed>
-<routing>
-<ip_forward config:type=\"boolean\">false</ip_forward>
-</routing>
-<keep_install_network config:type=\"boolean\">true</keep_install_network>
-</networking>
-""" + \
-                      f"""<software>
-<packages config:type=\"list\">
-<package>gcc</package>
-<package>multipath-tools</package>
-<package>kdump</package>
-<package>gcc-c++</package>
-""" + \
-                      sles_package + \
-                      f"""<scripts>
-<post-scripts config:type=\"list\">
-<script>
-<filename>setupssh.sh</filename>
-<interpreter>shell</interpreter>
-<debug config:type=\"boolean\">true</debug>
-<source><![CDATA[
-systemctl enable sshd.service
-systemctl start sshd.service
-]]></source>
-</script>
-</post-scripts>
-</scripts>
-</profile>
-"""
-            ksparm.writelines(inst_param)
-            ksparm.sftp.close()
-
+            self.filename = vmParser.netDir + '/boot/ppc64le/grub2-ieee1275/powerpc-ieee1275/core.elf' 
+        elif '15SP' in version.upper():
+            cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
+                + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
+                + vmParser.confparser('repo', 'RepoPort') \
+                + self.repoDir + '/boot/' + ' -P ' + self.destDir
+            self.runCommand(self.nxtSrvCon, cmd)
+            cmd = 'grub2-mknetdir --net-directory=' + self.baseURL + \
+                ' --subdir=' + vmParser.netDir + '/boot/ppc64le/grub2-ieee1275/'
+            self.runCommand(self.nxtSrvCon, cmd)
+            cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
+                + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
+                + vmParser.confparser('repo', 'RepoPort') \
+                + self.repoDir + '/boot/ppc64le/grub2-ieee1275/core.elf -P ' + \
+                self.destDir+"/boot/ppc64le/grub2-ieee1275/powerpc-ieee1275/"
+            self.runCommand(self.nxtSrvCon, cmd)
+            self.runCommand(self.nxtSrvCon, 'chmod 777 -R ' + self.destDir)
+            self.filename = vmParser.netDir + \
+                '/boot/ppc64le/grub2-ieee1275/powerpc-ieee1275/core.elf'
+        else:
+            cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
+                + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
+                + vmParser.confparser('repo', 'RepoPort') \
+                + self.repoDir + '/suseboot/' + ' -P ' + self.destDir
+            self.runCommand(self.nxtSrvCon, cmd)
+            cmd = 'mv ' + self.destDir + '/suseboot/yaboot.ibm ' + \
+                self.destDir + '/suseboot/yaboot.suse'
+            self.runCommand(self.nxtSrvCon, cmd)
+            self.filename = vmParser.netDir + '/suseboot/yaboot.suse'
 
     def createAutoyastJsonnet(self):
         logging.info("Generating dynamic autoyast.jsonnet for SLES16")
@@ -737,16 +538,19 @@ systemctl start sshd.service
         self.KsHost.connect(vmParser.confparser('kshost', 'Host'),
                             username=vmParser.confparser('kshost', 'User'),
                             password=vmParser.confparser('kshost', 'Password'))
-        print ("in json net")
         sftp = self.KsHost.open_sftp()
         self.ksinst = vmParser.confparser('kshost', 'KsDir') + '/sles/' + vmParser.args.host_mac + '.jsonnet'
         remote_path = '/var/www/html' + self.ksinst
 
         ip_cidr = f"{vmParser.args.host_ip}/{netaddr.IPNetwork(vmParser.args.host_ip + '/' + vmParser.args.host_netmask).prefixlen}"
-        disk_id = f"/dev/disk/by-id/{vmParser.args.host_disk}"
+        if vmParser.args.host_disk:
+            if "-" not in vmParser.args.host_disk:
+                print(f"ERROR: '{vmParser.args.host_disk}' looks like a device name. Provide a valid disk ID from /dev/disk/by-id/", file=sys.stderr)
+                sys.exit(1)
+            disk_id = f"/dev/disk/by-id/{vmParser.args.host_disk}"
         nameserver = vmParser.confparser(vmParser.domain, 'DNS')
         pre_script_block = ''
-        post_script_block = '' 
+        post_script_block = ''
         scripts_block = ''
         pre_script_block = """{
             name: "activate-multipath",
@@ -754,8 +558,7 @@ systemctl start sshd.service
                 #!/usr/bin/bash
                 systemctl start multipathd.socket multipathd.service
             |||
-        }""" 
-
+        }"""
         post_script_block = """{
             name: "permit-root-login",
             content: |||
@@ -770,7 +573,7 @@ systemctl start sshd.service
                 fi
             |||
         }"""
-        if "mpath" in vmParser.args.host_disk: 
+        if "mpath" in vmParser.args.host_disk:
             scripts_block = f"""  scripts: {{
                 pre: [
                     {pre_script_block}
@@ -807,6 +610,123 @@ systemctl start sshd.service
 
         sftp.close()
 
+
+    def createKickstart(self):
+        logging.info("Prepareing kick start file")
+        self.KsHost = paramiko.SSHClient()
+        self.KsHost.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.KsHost.connect(vmParser.confparser('kshost', 'Host'),
+                            username=vmParser.confparser(
+            'kshost', 'User'),
+            password=vmParser.confparser('kshost', 'Password'))
+
+        sftp = self.KsHost.open_sftp()
+        self.ksinst = vmParser.confparser(
+            'kshost', 'KsDir') + '/' + distro+'/'+distro+'-' + vmParser.args.host_mac + '.ks'
+
+        partition_string = ''
+        multipath_string = ''
+        kernel_params = 'mitigations=auto quiet crashkernel=1024M '
+        if not vmParser.args.kernel_params:
+            kernel_params = "%s %s" % (
+                kernel_params, vmParser.args.kernel_params)
+
+        if vmParser.args.multipathsetup != '':
+            multipath_string = "<storage>\n<start_multipath config:type=\"boolean\">true</start_multipath>\n</storage>"
+        if vmParser.args.host_disk != '':
+            vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
+            partition_string = "<device>"+vmParser.args.host_disk+"</device>\n<use>all</use>"
+        else:
+            partition_string = "<use>all</use>\n<partitions config:type=\"list\">\n<partition>\n<mount>/</mount>\n<size>max</size>\n</partition>\n</partitions>\n"
+
+        host_name = ''
+        if vmParser.args.host_name:
+            host_name = vmParser.args.host_name
+        else:
+            host_name = "localhost"
+        urlstring = ''
+        sles15_url = ''
+        sles_package = ''
+        urlstring = "http://"+vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
+            self.repoDir + "/sdk"
+        if '15' in version:
+            subversion = ''
+            python_str = ''
+            if version[2:5]:
+                subversion = version[2:5].upper()+"-"
+                if 'SP' in subversion:
+                    urlstring = "http://"+vmParser.confparser(
+                        'repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir
+                if 'SP1' in subversion:
+                    urlstring = "http://"+vmParser.confparser(
+                        'repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')+self.repoDir+'/sdk'
+                    python_str = "<listentry>\n" \
+                        "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
+                        "<product>sle-module-python2</product>\n<product_dir>/Module-Python2</product_dir>\n" \
+                        "</listentry>\n"
+                value = ["SP4", "SP3", "SP1", "SP5"]
+                if any(x in subversion for x in value):
+                    python_str = ''
+                subversion = ''
+
+            sles15_url = "<add-on>\n<add_on_products config:type=\"list\">\n<listentry>\n" \
+                "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
+                "<product>sle-module-server-applications</product>\n<product_dir>/"+subversion+"Module-Server-Applications</product_dir>\n" \
+                "</listentry>\n<listentry>\n" \
+                "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
+                "<product>sle-module-legacy</product>\n<product_dir>/"+subversion+"Module-Legacy</product_dir>\n" \
+                "</listentry>\n<listentry>\n" \
+                "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
+                "<product>sle-module-development-tools</product>\n<product_dir>/"+subversion+"Module-Development-Tools</product_dir>\n" \
+                "</listentry>\n<listentry>\n" \
+                "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
+                "<product>sle-module-desktop-applications</product>\n<product_dir>/"+subversion+"Module-Desktop-Applications</product_dir>\n" \
+                "</listentry>\n<listentry>\n" \
+                "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
+                "<product>sle-module-basesystem</product>\n<product_dir>/"+subversion+"Module-Basesystem</product_dir>\n" \
+                "</listentry>\n"+python_str + \
+                "</add_on_products>\n</add-on>\n"
+
+            sles_package = "<package>sles-release</package><package>sle-module-server-applications-release</package>\n" \
+                "<package>sle-module-legacy-release</package>\n" \
+                "<package>sle-module-development-tools-release</package><package>sle-module-desktop-applications-release</package>\n" \
+                "<package>sle-module-basesystem-release</package><package>java-11-openjdk</package></packages><patterns config:type=\"list\"><pattern>apparmor</pattern>\n" \
+                "<pattern>base</pattern>\n" \
+                "<pattern>basesystem</pattern><pattern>enhanced_base</pattern><pattern>fonts</pattern><pattern>gnome_basic</pattern>\n" \
+                "<pattern>gnome_basis</pattern><pattern>minimal_base</pattern><pattern>sw_management</pattern><pattern>x11</pattern>\n" \
+                "<pattern>x11_enhanced</pattern><pattern>x11_yast</pattern><pattern>yast2_basis</pattern></patterns>\n"
+        else:
+            sles15_url = "<add-on>\n<add_on_products config:type=\"list\">\n<listentry>\n" \
+                "<media_url><![CDATA["+urlstring+"]]></media_url>\n" \
+                "<product>sle-module-server-applications</product>\n<product_dir>/</product_dir>\n" \
+                "</listentry>\n</add_on_products>\n</add-on>\n"
+            sles_package = "<package>java-1_8_0-openjdk</package></packages>\n"
+        print(self.ksinst)
+        ksparm = sftp.open('/var/www/html'+self.ksinst, 'w')
+        inst_param = "<?xml version=\"1.0\"?>\n<!DOCTYPE profile>\n" \
+                     "<profile xmlns=\"http://www.suse.com/1.0/yast2ns\" xmlns:config=\"http://www.suse.com/1.0/configns\">\n"+sles15_url+""\
+                     "<bootloader>\n<global>\n<append>"+kernel_params+"</append>\n" \
+                     "<xen_kernel_append>crashkernel=1024M\&lt;4G</xen_kernel_append>\n</global>\n</bootloader>\n" \
+                     "<kdump>\n<add_crash_kernel t=\"boolean\">true</add_crash_kernel>\n<crash_kernel>1024M</crash_kernel>\n" \
+                     "<crash_xen_kernel>1024M\&lt;4G</crash_xen_kernel>\n</kdump> \n" \
+                     "<users config:type=\"list\">\n<user>\n<encrypted config:type=\"boolean\">false</encrypted>\n" \
+                     "<user_password>"+vmParser.args.host_password+"</user_password>\n<username>root</username>\n</user>\n</users>\n" \
+                     "<general>\n<mode>\n<confirm config:type=\"boolean\">false</confirm>\n</mode>\n"+multipath_string+"</general>\n" \
+                     "<partitioning config:type=\"list\">\n<drive>\n"+partition_string+"</drive>\n</partitioning>\n" \
+                     "<services-manager>\n<default_target>multi-user</default_target>\n<services>\n<disable config:type=\"list\">\n" \
+                     "<service>sshd</service>\n</disable>\n</services>\n</services-manager>\n<firewall>\n" \
+                     "<enable_firewall config:type=\"boolean\">false</enable_firewall>\n<start_firewall config:type=\"boolean\">false</start_firewall>\n" \
+                     "</firewall>\n<networking>\n<dns>\n<hostname>"+host_name+"</hostname>\n</dns>\n<managed config:type=\"boolean\">false</managed>\n<routing>\n" \
+                     "<ip_forward config:type=\"boolean\">false</ip_forward>\n</routing>\n" \
+                     "<keep_install_network config:type=\"boolean\">true</keep_install_network>\n</networking>\n<software>\n" \
+                     "<packages config:type=\"list\">\n<package>gcc</package>\n<package>multipath-tools</package>\n<package>kdump</package>\n" \
+                     "<package>gcc-c++</package>\n"+sles_package+"</software>\n<scripts>\n<post-scripts config:type=\"list\">\n<script>\n" \
+                     "<filename>setupssh.sh</filename>\n<interpreter>shell</interpreter>\n<debug config:type=\"boolean\">true</debug>\n" \
+                     "<source><![CDATA[\nsystemctl enable sshd.service\nsystemctl start sshd.service\n]]></source>\n" \
+            "</script>\n</post-scripts>\n</scripts>\n</profile>\n"
+        ksparm.writelines(inst_param)
+        ksparm.sftp.close()
+
     def configGrub(self):
         if '16' in version:
             self.createAutoyastJsonnet()
@@ -829,65 +749,72 @@ systemctl start sshd.service
             httpintrd="/"+self.repoDir+'/boot/ppc64le/initrd'
             gfd.write('\n')
             cli_nw = 'rd.neednet=1 ' + 'ip=' + vmParser.args.host_ip + '::' + vmParser.args.host_gw + ':' + vmParser.args.host_netmask + \
-                    ':' + vmParser.args.host_name + '::none' + ' nameserver=' + vmParser.confparser(vmParser.domain, 'DNS') 
-            strLnx = '    linux ' + vmParser.netDir + '/boot/ppc64le/linux ' + cli_nw + \
+                    ':' + vmParser.args.host_name + '::none' + ' nameserver=' + vmParser.confparser(vmParser.domain, 'DNS')
+            strLnx = '    linux ' + httppath + httplinux + cli_nw + \
                     ' agama.install_url=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
                     self.repoDir +'/install  root=live:http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')  + \
                     self.repoDir + '/LiveOS/squashfs.img  live.password=abc123' + \
                     ' inst.auto=http://' +vmParser.confparser('kshost', 'Host') + self.ksinst + '\n'
             gfd.write(strLnx)
-            strInit = '    initrd ' + vmParser.netDir + '/boot/ppc64le/initrd\n'
+            strInit = '    initrd ' + httppath + httpintrd+'\n'
             gfd.write(strInit)
             gfd.write('}')
             gfd.close()
             sftp.close()
-        else:
-            if '11SP' not in version.upper():
-                gfd = sftp.open(
-                    self.destDir + '/boot/ppc64le/grub2-ieee1275/grub.cfg', 'w')
-                gfd.write('set timeout=1\n')
-                gfd.write('menuentry \'Install OS\' {\n')
-                gfd.write('    insmod http\n')
-                gfd.write('    insmod tftp\n')
-                gfd.write('    set root=tftp,' +
+        elif '11SP' not in version.upper():
+            self.createKickstart()
+            sftp = self.nxtSrvCon.open_sftp()
+            logging.info("Prepareing GRUB for sles15")
+            gfd = sftp.open(
+                self.destDir + '/boot/ppc64le/grub2-ieee1275/grub.cfg', 'w')
+            gfd.write('set timeout=1\n')
+            gfd.write('menuentry \'Install OS\' {\n')
+            gfd.write('    insmod http\n')
+            gfd.write('    insmod tftp\n')
+            gfd.write('    set root=tftp,' +
                       vmParser.confparser(vmParser.domain, 'NextServer') + '\n')
-                gfd.write('    echo \'Loading OS Install kernel ...\'\n')
-                cli_nw = ' Display_IP=' + vmParser.args.host_ip + ' Netmask=' + vmParser.args.host_netmask + \
-                    ' HostIP=' + vmParser.args.host_ip + ' Gateway=' + vmParser.args.host_gw + \
-                    ' nameserver=' + vmParser.confparser(vmParser.domain, 'DNS')
-                strLnx = '    linux ' + vmParser.netDir + '/boot/ppc64le/linux ' + cli_nw + \
-                    ' install=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                    self.repoDir
-                strLnx = strLnx + ' autoyast=http://' + \
-                    vmParser.confparser('kshost', 'Host') + self.ksinst + '\n'
-                gfd.write(strLnx)
-                strInit = '    initrd ' + vmParser.netDir + '/boot/ppc64le/initrd\n'
-                gfd.write(strInit)
-                gfd.write('}\n')
-                gfd.sftp.close()
-            else:
-                gfd = sftp.open(self.baseURL + '/yaboot.conf', 'w')
-                gfd.write('message=suseboot/yaboot.txt\n\n')
-                gfd.write('default=install\n')
-                gfd.write('timeout=10\n')
-                gfd.write('image[64bit]=' + vmParser.netDir +
+            gfd.write('    echo \'Loading OS Install kernel ...\'\n')
+            cli_nw = ' Display_IP=' + vmParser.args.host_ip + ' Netmask=' + vmParser.args.host_netmask + \
+                ' HostIP=' + vmParser.args.host_ip + ' Gateway=' + vmParser.args.host_gw + \
+                ' nameserver=' + vmParser.confparser(vmParser.domain, 'DNS')
+            strLnx = '    linux ' + vmParser.netDir + '/boot/ppc64le/linux ' + cli_nw + \
+                ' install=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
+                self.repoDir
+            # if '15' in version:
+            #    strLnx = strLnx+ ' autoyast=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
+            #            '/powervmks/sles%s.ks\n' % "15"
+            # else:
+            strLnx = strLnx + ' autoyast=http://' + \
+                vmParser.confparser('kshost', 'Host') + self.ksinst + '\n'
+            gfd.write(strLnx)
+            strInit = '    initrd ' + vmParser.netDir + '/boot/ppc64le/initrd\n'
+            gfd.write(strInit)
+            gfd.write('}\n')
+            gfd.sftp.close()
+        else:
+            gfd = sftp.open(self.baseURL + '/yaboot.conf', 'w')
+            gfd.write('message=suseboot/yaboot.txt\n\n')
+            gfd.write('default=install\n')
+            gfd.write('timeout=10\n')
+            gfd.write('image[64bit]=' + vmParser.netDir +
                       '/suseboot/linux64\n')
-                gfd.write(' label=install\n')
-                gfd.write(' initrd=' + vmParser.netDir + '/suseboot/initrd64\n')
-                cli_nw = ' gateway=' + vmParser.args.host_gw + ' hostip=' + vmParser.args.host_ip + \
-                    ' netmask=' + vmParser.args.host_netmask + ' dns=' + \
-                    vmParser.confparser(vmParser.domain, 'DNS')
-                cli_mod = 'sysrq=1 install=slp insmod=sym53c8xx insmod=ipr insmod=tftp insmod=http slp=1 splash=0 TERM=linux textmode=1'
-                cli_repo = ' install=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                    self.repoDir
-                cli_yast = ' autoyast=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                    '/powervmks/sles99.ks'
-                gfd.write(' append="' + cli_mod + cli_repo +
+            gfd.write(' label=install\n')
+            gfd.write(' initrd=' + vmParser.netDir + '/suseboot/initrd64\n')
+            cli_nw = ' gateway=' + vmParser.args.host_gw + ' hostip=' + vmParser.args.host_ip + \
+                ' netmask=' + vmParser.args.host_netmask + ' dns=' + \
+                vmParser.confparser(vmParser.domain, 'DNS')
+            cli_mod = 'sysrq=1 install=slp insmod=sym53c8xx insmod=ipr insmod=tftp insmod=http slp=1 splash=0 TERM=linux textmode=1'
+            cli_repo = ' install=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
+                self.repoDir
+            cli_yast = ' autoyast=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
+                '/powervmks/sles99.ks'
+            gfd.write(' append="' + cli_mod + cli_repo +
                       cli_nw + cli_yast + '"\n')
-                gfd.sftp.close()
-                gfm = '/yaboot.conf-' + (vmParser.args.host_mac).replace(':', '-')
-                cmd = 'mv ' + self.baseURL + '/yaboot.conf ' + self.baseURL + gfm
-                self.runCommand(self.nxtSrvCon, cmd)  
+            gfd.sftp.close()
+            gfm = '/yaboot.conf-' + (vmParser.args.host_mac).replace(':', '-')
+            cmd = 'mv ' + self.baseURL + '/yaboot.conf ' + self.baseURL + gfm
+            self.runCommand(self.nxtSrvCon, cmd)
+
 
 def logger():
     if not os.path.isdir("./log"):
