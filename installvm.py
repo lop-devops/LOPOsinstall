@@ -571,7 +571,7 @@ class Sles(Distro):
                 else
                     echo "PermitRootLogin yes" >> "$ssh_file"
                 fi
-		systemctl restart sshd.service
+                systemctl enable sshd.service
             |||
         }"""
         if "mpath" in vmParser.args.host_disk:
