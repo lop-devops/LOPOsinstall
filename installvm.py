@@ -599,7 +599,7 @@ class Sles(Distro):
   "bootloader": {{ "stopOnBootMenu": false }},
   "user": {{ "fullName": "abc", "userName": "abc", "password": "abc123", "hashedPassword": false, "autologin": false }},
   "root": {{ "hashedPassword": false, "password": "{vmParser.args.host_password}" }},
-  "software": {{ "patterns": [] }},
+  "software": {{ "patterns": [], "package":"openssl" }},
   "product": {{ "id": "SLES" }},
   "storage": {{
     "drives": [{{ "search": "{disk_id}", "partitions": [{{ "search": "*", "delete": true }}, {{ "filesystem": {{ "path": "/" }}, "size": {{ "min": "10 GiB" }} }}, {{ "filesystem": {{ "path": "swap" }}, "size": {{ "min": "1 GiB", "max": "4 GiB" }} }}] }}]
