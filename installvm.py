@@ -885,5 +885,6 @@ if __name__ == "__main__":
     vmInst.cleanup()
     vmInst.file_addinsystem()
     if vmParser.args.ssl_server and distro.upper() == 'SLES':
-        vmInst.cacert_addinsystem()
+       if '16' not in version: 
+           vmInst.cacert_addinsystem()
     copylog()
