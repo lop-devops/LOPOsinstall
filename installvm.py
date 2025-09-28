@@ -247,6 +247,10 @@ class Distro():
                 self.chkssh.close()
                 proc.terminate()
                 return None
+            except paramiko.ssh_exception.BadHostKeyException as e:
+                self.chkssh.close()
+                self.chkssh = paramiko.SSHClient()
+                self.chkssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             except Exception:
                 time.sleep(30)
             iteration += 1
