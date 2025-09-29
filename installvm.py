@@ -247,6 +247,10 @@ class Distro():
                 self.chkssh.close()
                 proc.terminate()
                 return None
+            except paramiko.ssh_exception.BadHostKeyException as e:
+                self.chkssh.close()
+                self.chkssh = paramiko.SSHClient()
+                self.chkssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             except Exception:
                 time.sleep(30)
             iteration += 1
@@ -595,7 +599,7 @@ class Sles(Distro):
   "bootloader": {{ "stopOnBootMenu": false }},
   "user": {{ "fullName": "abc", "userName": "abc", "password": "abc123", "hashedPassword": false, "autologin": false }},
   "root": {{ "hashedPassword": false, "password": "{vmParser.args.host_password}" }},
-  "software": {{ "patterns": [] }},
+  "software": {{ "patterns": [], "package":"openssl" }},
   "product": {{ "id": "SLES" }},
   "storage": {{
     "drives": [{{ "search": "{disk_id}", "partitions": [{{ "search": "*", "delete": true }}, {{ "filesystem": {{ "path": "/" }}, "size": {{ "min": "10 GiB" }} }}, {{ "filesystem": {{ "path": "swap" }}, "size": {{ "min": "1 GiB", "max": "4 GiB" }} }}] }}]
@@ -881,5 +885,6 @@ if __name__ == "__main__":
     vmInst.cleanup()
     vmInst.file_addinsystem()
     if vmParser.args.ssl_server and distro.upper() == 'SLES':
-        vmInst.cacert_addinsystem()
+       if '16' not in version: 
+           vmInst.cacert_addinsystem()
     copylog()
