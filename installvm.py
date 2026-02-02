@@ -552,6 +552,8 @@ class Sles(Distro):
                 print(f"ERROR: '{vmParser.args.host_disk}' looks like a device name. Provide a valid disk ID from /dev/disk/by-id/", file=sys.stderr)
                 sys.exit(1)
             disk_id = f"/dev/disk/by-id/{vmParser.args.host_disk}"
+            if vmParser.args.host_disk == '' and vmParser.args.multipathsetup == '':
+                disk_id = '/dev/sda'
         nameserver = vmParser.confparser(vmParser.domain, 'DNS')
         pre_script_block = ''
         post_script_block = ''
