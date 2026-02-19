@@ -736,6 +736,10 @@ class Sles(Distro):
 
     def configGrub(self):
         if '16' in version:
+            if '16SP1' in version:
+                installurl="inst.install_url"
+            else:
+                installurl="agama.install_url"
             self.createAutoyastJsonnet()
             logging.info("Preparing GRUB for SLES16")
             sftp = self.nxtSrvCon.open_sftp()
@@ -758,7 +762,7 @@ class Sles(Distro):
             cli_nw = 'rd.neednet=1 ' + 'ip=' + vmParser.args.host_ip + '::' + vmParser.args.host_gw + ':' + vmParser.args.host_netmask + \
                     ':' + vmParser.args.host_name + '::none' + ' nameserver=' + vmParser.confparser(vmParser.domain, 'DNS')
             strLnx = '    linux ' + vmParser.netDir + '/boot/ppc64le/linux '+ cli_nw + \
-                    ' agama.install_url=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
+                    ' '+installurl+'=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
                     self.repoDir +'/install  root=live:http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')  + \
                     self.repoDir + '/LiveOS/squashfs.img  live.password=abc123' + \
                     ' inst.auto=http://' +vmParser.confparser('kshost', 'Host') + self.ksinst + '\n'
