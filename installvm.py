@@ -736,7 +736,7 @@ class Sles(Distro):
 
     def configGrub(self):
         if '16' in version:
-            if '16SP1' in version:
+            if '16SP1' in version.upper():
                 installurl="inst.install_url"
             else:
                 installurl="agama.install_url"
@@ -763,7 +763,7 @@ class Sles(Distro):
                     ':' + vmParser.args.host_name + '::none' + ' nameserver=' + vmParser.confparser(vmParser.domain, 'DNS')
             strLnx = '    linux ' + vmParser.netDir + '/boot/ppc64le/linux '+ cli_nw + \
                     ' '+installurl+'=http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort') + \
-                    self.repoDir +'/install  root=live:http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')  + \
+                    self.repoDir +'  root=live:http://' + vmParser.confparser('repo', 'RepoIP') + ':' + vmParser.confparser('repo', 'RepoPort')  + \
                     self.repoDir + '/LiveOS/squashfs.img  live.password=abc123' + \
                     ' inst.auto=http://' +vmParser.confparser('kshost', 'Host') + self.ksinst + '\n'
             gfd.write(strLnx)
