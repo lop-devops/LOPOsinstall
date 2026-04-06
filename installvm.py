@@ -284,9 +284,23 @@ class Distro():
         self.system.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.system.connect(vmParser.args.host_ip, username='root',
                             password=vmParser.args.host_password)
-        cmd = 'openssl s_client -showcerts -servername %s -connect %s:443 > /etc/pki/trust/anchors/cacert.pem' % (
-            vmParser.args.ssl_server, vmParser.args.ssl_server)
-        self.runCommand(self.system, cmd)
+        
+        # Split comma-separated SSL servers
+        ssl_servers = [server.strip() for server in vmParser.args.ssl_server.split(',')]
+        
+        # Generate certificate file for each SSL server
+        for index, ssl_server in enumerate(ssl_servers, start=1):
+            if len(ssl_servers) > 1:
+                cert_filename = f'cacert_{index}.pem'
+            else:
+                cert_filename = 'cacert.pem'
+            
+            cmd = 'openssl s_client -showcerts -servername %s -connect %s:443 > /etc/pki/trust/anchors/%s' % (
+                ssl_server, ssl_server, cert_filename)
+            self.runCommand(self.system, cmd)
+            logging.info("Generated certificate file: /etc/pki/trust/anchors/%s for server: %s" % (cert_filename, ssl_server))
+        
+        # Update CA certificates once after all certificates are added
         cmd = 'update-ca-certificates'
         self.runCommand(self.system, cmd)
 
