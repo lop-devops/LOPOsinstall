@@ -619,7 +619,7 @@ class Sles(Distro):
 
         jsonnet_content = f'''{{
   "bootloader": {{ "stopOnBootMenu": false }},
-  "user": {{ "fullName": "abc", "userName": "abc", "password": "abc123", "hashedPassword": false, "autologin": false }},
+  "user": {{ "fullName": "abc", "userName": "abc", "password": "abc123", "hashedPassword": false }},
   "root": {{ "hashedPassword": false, "password": "{vmParser.args.host_password}" }},
   "software": {{ "patterns": [], "package":"openssl" }},
   "product": {{ "id": "SLES", "mode": "Standard" }},
