@@ -519,7 +519,13 @@ class Sles(Distro):
             cmd = f'cp {src_cfg} {dest_cfg}'
             self.runCommand(self.nxtSrvCon, cmd)  
             self.runCommand(self.nxtSrvCon, 'chmod 777 -R ' + self.destDir)
-            self.filename = vmParser.netDir + '/boot/ppc64le/grub2-ieee1275/powerpc-ieee1275/core.elf' 
+            self.filename = vmParser.netDir + '/boot/ppc64le/grub2-ieee1275/powerpc-ieee1275/core.elf'
+            if '16SP1' in version.upper():
+                if "beta1" not in build:
+                    cmd = 'cp '+self.baseURL+'/'+vmParser.netDir+'/boot/ppc64le/loader/initrd ' +self.baseURL+'/'+vmParser.netDir+'/boot/ppc64le/'
+                    self.runCommand(self.nxtSrvCon, cmd)
+                    cmd = 'cp '+self.baseURL+'/'+vmParser.netDir+'/boot/ppc64le/loader/linux ' +self.baseURL+'/'+vmParser.netDir+'/boot/ppc64le/'
+                    self.runCommand(self.nxtSrvCon, cmd) 
         elif '15SP' in version.upper():
             cmd = 'wget -r --reject="index.html*"  --no-parent -nH --cut-dir=' + str(cutdir) \
                 + ' http://' + vmParser.confparser('repo', 'RepoIP') + ':' \
