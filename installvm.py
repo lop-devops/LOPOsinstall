@@ -615,6 +615,21 @@ class Sles(Distro):
                 systemctl enable sshd.service
             |||
         }"""
+        root_fstype_j = vmParser.args.fs_type if vmParser.args.fs_type in ['xfs', 'ext4', 'btrfs'] else 'xfs'
+        if vmParser.args.partition_type == 'single':
+            # Single-disk layout: PReP boot + 5G swap + rest -> / (no LVM)
+            storage_partitions = (
+                '{ "search": "*", "delete": true }, '
+                '{ "id": "prep", "size": "4 MiB", "type": "prep" }, '
+                '{ "filesystem": { "path": "swap" }, "size": { "min": "5 GiB", "max": "5 GiB" } }, '
+                '{ "filesystem": { "path": "/" }, "size": { "min": "1 GiB" } }'
+            )
+        else:
+            storage_partitions = (
+                '{ "search": "*", "delete": true }, '
+                '{ "filesystem": { "path": "/" }, "size": { "min": "10 GiB" } }, '
+                '{ "filesystem": { "path": "swap" }, "size": { "min": "1 GiB", "max": "4 GiB" } }'
+            )
         if "mpath" in vmParser.args.host_disk:
             scripts_block = f"""  scripts: {{
                 pre: [
@@ -639,7 +654,7 @@ class Sles(Distro):
   "software": {{ "patterns": [], "package":"openssl" }},
   "product": {{ "id": "SLES" }},
   "storage": {{
-    "drives": [{{ "search": "{disk_id}", "partitions": [{{ "search": "*", "delete": true }}, {{ "filesystem": {{ "path": "/" }}, "size": {{ "min": "10 GiB" }} }}, {{ "filesystem": {{ "path": "swap" }}, "size": {{ "min": "1 GiB", "max": "4 GiB" }} }}] }}]
+    "drives": [{{ "search": "{disk_id}", "partitions": [{storage_partitions}] }}]
   }},
   "network": {{
     "connections": [{{ "id": "Wired Connection", "method4": "manual", "gateway4": "{vmParser.args.host_gw}", "method6": "disabled", "addresses": ["{ip_cidr}"], "nameservers": ["{nameserver}"], "ignoreAutoDns": false, "status": "up", "autoconnect": true }}]
@@ -675,7 +690,25 @@ class Sles(Distro):
 
         if vmParser.args.multipathsetup != '':
             multipath_string = "<storage>\n<start_multipath config:type=\"boolean\">true</start_multipath>\n</storage>"
-        if vmParser.args.host_disk != '':
+
+        if vmParser.args.partition_type == 'single':
+            # Single-disk layout: PReP boot + 5G swap + rest -> / (no LVM)
+            if vmParser.args.host_disk != '':
+                disk_device = '/dev/disk/by-id/' + vmParser.args.host_disk
+                vmParser.args.host_disk = disk_device
+            else:
+                disk_device = '/dev/sda'
+            root_fstype = vmParser.args.fs_type if vmParser.args.fs_type in ['xfs', 'ext4', 'btrfs'] else 'xfs'
+            partition_string = (
+                "<device>" + disk_device + "</device>\n"
+                "<use>all</use>\n"
+                "<partitions config:type=\"list\">\n"
+                "<partition>\n<partition_type>prep</partition_type>\n<size>4M</size>\n</partition>\n"
+                "<partition>\n<mount>swap</mount>\n<filesystem config:type=\"symbol\">swap</filesystem>\n<size>5G</size>\n</partition>\n"
+                "<partition>\n<mount>/</mount>\n<filesystem config:type=\"symbol\">" + root_fstype + "</filesystem>\n<size>max</size>\n</partition>\n"
+                "</partitions>\n"
+            )
+        elif vmParser.args.host_disk != '':
             vmParser.args.host_disk = '/dev/disk/by-id/' + vmParser.args.host_disk
             partition_string = "<device>"+vmParser.args.host_disk+"</device>\n<use>all</use>"
         else:
