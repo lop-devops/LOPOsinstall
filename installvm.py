@@ -390,7 +390,22 @@ class Rhel(Distro):
                     vmParser.confparser('repo', 'RepoIP') + \
                     ':/var/www/html' + self.repoDir
 
-        if vmParser.args.fs_type == 'btrfs':
+        if vmParser.args.partition_type == 'single':
+            # Manual single-disk layout:
+            #   sda1  4M   PowerPC PReP boot
+            #   sda2  5G   swap
+            #   sda3  rest LVM -> / (xfs|ext4|btrfs)
+            single_disk = vmParser.args.host_disk.split(',')[0]
+            root_fstype = vmParser.args.fs_type if vmParser.args.fs_type in ['xfs', 'ext4', 'btrfs'] else 'xfs'
+            addksstring = (
+                "part prepboot --fstype=prepboot --size=4 --ondisk=" + single_disk + "\n"
+                "part swap     --fstype=swap     --size=5120 --ondisk=" + single_disk + "\n"
+                "part pv.01    --fstype=lvmpv    --size=1 --grow --ondisk=" + single_disk + "\n"
+                "volgroup vg_root pv.01\n"
+                "logvol /  --fstype=" + root_fstype +
+                " --name=lv_root --vgname=vg_root --size=1 --grow"
+            )
+        elif vmParser.args.fs_type == 'btrfs':
             if vmParser.args.partition_type == 'plain':
                 addksstring = "autopart --fstype=btrfs"
             else:
@@ -407,7 +422,7 @@ class Rhel(Distro):
                 addksstring = "autopart --type=lvm --fstype=xfs"
 
         exit_nosupport = 0
-        if vmParser.args.partition_type not in ['lvm', 'plain']:
+        if vmParser.args.partition_type not in ['lvm', 'plain', 'single']:
             logging.info("Aborting Installation : as partition type %s is not supported or not valid" %
                          vmParser.args.partition_type)
             exit_nosupport = 1
