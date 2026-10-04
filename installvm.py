@@ -235,6 +235,14 @@ class Distro():
         self.chkssh = paramiko.SSHClient()
         self.chkssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         iteration = 0
+        # 3 failovers, alternating inactive -> active -> inactive, 30s apart after initial delay
+        failover_schedule = [
+            (0,     'inactive'),  # failover 1: active -> backup
+            (30,    'active'),    # failover 2: failback to original
+            (60,    'inactive'),  # failover 3: active -> backup again
+        ]
+        failover_index = 0
+        start_time = time.time()
         while iteration <= 100:
             try:
                 self.chkssh.connect(vmParser.args.host_ip,
@@ -253,8 +261,56 @@ class Distro():
                 self.chkssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             except Exception:
                 time.sleep(30)
+            if vmParser.args.vnic_failover and failover_index < len(failover_schedule):
+                elapsed = time.time() - start_time
+                failover_delay = int(vmParser.confparser('vnic', 'FailoverDelay'))
+                offset, target_status = failover_schedule[failover_index]
+                if elapsed >= failover_delay + offset:
+                    logging.info("vNIC Failover: iteration %d of %d" % (
+                        failover_index + 1, len(failover_schedule)))
+                    self.triggerVnicFailover(target_status)
+                    failover_index += 1
             iteration += 1
         logging.info("Installation Failed : Check logs for more details")
+
+    def triggerVnicFailover(self, target_status):
+        backing_device = vmParser.confparser('vnic', 'BackingDevice').strip()
+        if not backing_device:
+            logging.info("vNIC Failover: BackingDevice not set in [vnic] config section, skipping failover")
+            return
+        logging.info("vNIC Failover: Setting backing device '%s' to %s" % (backing_device, target_status))
+        try:
+            vnicCon = paramiko.SSHClient()
+            vnicCon.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            vnicCon.connect(vmParser.args.lpar_hmc,
+                            username=vmParser.args.hmc_userid,
+                            password=vmParser.args.hmc_password)
+            # Set backing device status to trigger failover or failback
+            cmd = ('chhwres -r virtualio --rsubtype vnicbkdev'
+                   ' -m %s -p %s -o s --id %s -a curr_status=%s' % (
+                       vmParser.args.lpar_managed_system,
+                       vmParser.args.lpar_partition_name,
+                       backing_device,
+                       target_status))
+            logging.info("vNIC Failover: Running: %s" % cmd)
+            stdin, stdout, stderr = vnicCon.exec_command(cmd)
+            rc = stdout.channel.recv_exit_status()
+            if rc:
+                err = stderr.read().decode('utf-8').strip()
+                logging.info("vNIC Failover: chhwres failed (rc=%s): %s" % (rc, err))
+            else:
+                logging.info("vNIC Failover: Backing device set to %s successfully (rc=0)" % target_status)
+            # Log post-failover backing device state
+            cmd = ('lshwres -r virtualio --rsubtype vnicbkdev'
+                   ' -m %s --filter lpar_names=%s' % (
+                       vmParser.args.lpar_managed_system,
+                       vmParser.args.lpar_partition_name))
+            stdin, stdout, stderr = vnicCon.exec_command(cmd)
+            for line in stdout:
+                logging.info("vNIC Failover state: %s" % line.strip())
+            vnicCon.close()
+        except Exception as e:
+            logging.info("vNIC Failover: Exception during failover (installation continues): %s" % e)
 
     def cleanup(self):
         self.dhcp_cleanup()

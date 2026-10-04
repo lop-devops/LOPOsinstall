@@ -70,6 +70,9 @@ class CmdLineArgParser():
         lparDetails.add_argument(
             '--ksargs', help='Additional Kick Start option', default='')
         lparDetails.add_argument('--showcleanup', default=1)
+        lparDetails.add_argument(
+            '--vnic-failover', action='store_true', default=False,
+            help='Trigger vNIC backing device failover mid-installation to test resilience')
         parser.add_argument(
             '--distro', help='distro to be installed ex: rhel_7.4le_alpa, sles_11sp3_beta', required=True)
         parser.add_argument(
